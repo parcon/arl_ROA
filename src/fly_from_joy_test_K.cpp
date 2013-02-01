@@ -13,7 +13,7 @@ It is intended as a simple example for those starting with the AR Drone platform
 #include <geometry_msgs/Vector3.h>
 #include <ardrone_autonomy/Navdata.h>
 	
-double max_speed = .5; //[m/s]
+double max_speed = 1.0; //[m/s]
 double Kp= 1.0;
 double Kd= 0.5;
 double des_altd= 1.0;
