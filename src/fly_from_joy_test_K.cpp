@@ -13,9 +13,10 @@ It is intended as a simple example for those starting with the AR Drone platform
 #include <geometry_msgs/Vector3.h>
 #include <ardrone_autonomy/Navdata.h>
 	
-double max_speed = 0.5; //[m/s]
-double Kp= 0.75;
-double Kd= 0.75;
+double max_speed = .5; //[m/s]
+double Kp= 1.0;
+double Kd= 0.5;
+double des_altd= 1.0;
 
 double joy_x_,joy_y_,joy_z_;
 int joy_a_,joy_b_,joy_xbox_;
@@ -23,9 +24,9 @@ double joy_x,joy_y,joy_z;
 int joy_a,joy_b,joy_xbox;
 
 double drone_vx_, drone_vy_ , drone_vz_;
-double drone_ax_, drone_ay_ , drone_az_;
+double drone_ax_, drone_ay_ , drone_az_, drone_altd_;
 double drone_vx, drone_vy , drone_vz;
-double drone_ax, drone_ay , drone_az;
+double drone_ax, drone_ay , drone_az, drone_altd;
 
 double cmd_x,cmd_y,cmd_z;
 int new_msg=0;
@@ -44,6 +45,7 @@ void joy_callback(const sensor_msgs::Joy& joy_msg_in)
 	//Take in xbox controller
 	joy_x_=joy_msg_in.axes[1]; //left stick up-down
 	joy_y_=joy_msg_in.axes[0]; //left stick left-right
+	joy_z_=joy_msg_in.axes[4]; //left stick left-right
 	joy_a_=joy_msg_in.buttons[0]; //a button
 	joy_b_=joy_msg_in.buttons[1]; //b button
 	joy_xbox_=joy_msg_in.buttons[8]; //xbox button
@@ -59,25 +61,34 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	drone_vx_=msg_in.vx*0.001; //[mm/s] to [m/s]
 	drone_vy_=msg_in.vy*0.001;	
 	drone_vz_=msg_in.vz*0.001;
+	drone_altd_=msg_in.altd*0.001;
 	
 	drone_ax_=msg_in.ax*9.8; //[g] to [m/s2]
 	drone_ay_=msg_in.ay*9.8;	
 	drone_az_=msg_in.az*9.8;
 	
+	
 	drone_state=msg_in.state;	
 	//ROS_INFO("getting sensor reading");	
 }
 
-void test_controller(double vx_des,double vy_des,double vz_des,double Kp, double Kd)
+//void test_controller(double vx_des,double vy_des,double vz_des,double Kp, double Kd)
+void test_controller(double vx_des,double vy_des,double altd_des,double Kp, double Kd)
 {
 		geometry_msgs::Twist twist_msg_gen;
 	
-		cmd_x=Kp*(vx_des-drone_vx_); //-Kd *drone_vx_	; //{-1 to 1}=K*( m/s - m/s)
-		cmd_y=Kp*(vy_des-drone_vy_); 
-		cmd_z=Kp*(vz_des-drone_vz_);
+		cmd_x=Kp*(vx_des-drone_vx); //-Kd *drone_vx_	; //{-1 to 1}=K*( m/s - m/s)
+		cmd_y=Kp*(vy_des-drone_vy); 
+		//cmd_z=Kp*(vz_des-drone_vz);
+		cmd_z=Kp*(altd_des-drone_altd);
 		twist_msg_gen.angular.x=1.0; 
 		twist_msg_gen.angular.y=1.0;
 		twist_msg_gen.angular.z=0.0;
+		
+		if (cmd_z > 1.0)
+			{cmd_z=1.0;}
+		if (cmd_z < 0.0)
+			{cmd_z=0.0;}
 }		
 
 /*
@@ -112,6 +123,7 @@ void merge_new_mgs(void){
 		drone_ax=drone_ax_;
 		drone_ay=drone_ay_;
 		drone_az=drone_az_;
+		drone_altd=drone_altd_;
 	}
 
 int main(int argc, char** argv)
@@ -138,7 +150,6 @@ int main(int argc, char** argv)
     ROS_INFO("Starting Test Node, /cmd_vel = f(joy,quad velocity)");
  	while (ros::ok()) {
 	merge_new_mgs();
-
 		//commands to change state of drone
 		if (joy_a){
 			while (drone_state ==2){
@@ -159,8 +170,8 @@ int main(int argc, char** argv)
 		if (joy_xbox){
 			double time_start=(double)ros::Time::now().toSec();
 			while (drone_state ==0 ){
-				ROS_INFO("landing drone");
-				pub_empty_reset.publish(emp_msg); //launches the drone
+				ROS_INFO("resetting drone");
+				pub_empty_reset.publish(emp_msg); //resets the drone
 				ros::spinOnce();
 				loop_rate.sleep();
 				if((double)ros::Time::now().toSec()> time_start+3.0){ 					
@@ -170,24 +181,25 @@ int main(int argc, char** argv)
 			}//drone take off	
 		}
 
-		if (fabs(joy_x)<0.01) {joy_x =0;}
+		if (fabs(joy_x)<0.10) {joy_x =0;}
 		//else {joy_x=joy_x*forget+joy_x_old*(1-forget);} //smoothing via forget
 
-		if (fabs(joy_y)<0.01) {joy_y =0;}
+		if (fabs(joy_y)<0.1) {joy_y =0;}
 		//else {joy_y=joy_y*forget+joy_y_old*(1-forget);}
 
-		if (fabs(joy_z)<0.01) {joy_z =0;}
+		if (fabs(joy_z)<0.1) {joy_z =0;}
 		//else {joy_z=joy_z*forget+joy_z_old*(1-forget);} 
 
 		cmd_x= joy_x*max_speed;
 		cmd_y= joy_y*max_speed;
 		cmd_z= joy_z*max_speed;
-	
-		test_controller(cmd_x,cmd_x,cmd_x,Kp,Kd); //modifies cmd_x,cmd_y,cmd_z proportinal to quad_speed
-		
+		ROS_INFO("Before x: %f y: %f z: %f",cmd_x,cmd_y,cmd_z);
+		//test_controller(cmd_x,cmd_y,cmd_z,Kp,Kd); //modifies cmd_x,cmd_y,cmd_z proportinal to quad_speed
+		test_controller(cmd_x,cmd_y,des_altd,Kp,Kd); //with pos on z
+		ROS_INFO("After x: %f y: %f z: %f",cmd_x,cmd_y,cmd_z);
 		twist_msg.linear.x=cmd_x;
 		twist_msg.linear.y=cmd_y;	
-		twist_msg.linear.z=0.0;//THRUST AND YAW ARE DISABLED
+		twist_msg.linear.z=cmd_z;
 		twist_msg.angular.z=0.0;	
 
 		v3_msg.x=cmd_x;

@@ -24,6 +24,7 @@ v is measurement white noise ~ N(0,R)
 #include <Eigen/Dense>
 #include <std_msgs/Float32MultiArray.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Imu.h>
 #include <ardrone_autonomy/Navdata.h>
 #include "kalman.h"
@@ -53,6 +54,8 @@ float rp1_hat;
 float rr1_hat;
 float wp1_hat;
 float wr1_hat;
+float ux, uy, uz;
+
 
 int tag_id =0;//CHANGES WHICH TAG TO DISPLAY
 float vision_angle[2];
@@ -109,6 +112,16 @@ void Imu_callback(const sensor_msgs::Imu& imu_in)
 	w_roll=imu_in.angular_velocity.x; //in rads/sec
 	w_pitch=imu_in.angular_velocity.y; //in rads/sec
 	w_yaw=imu_in.angular_velocity.z; //in rads/sec
+}
+
+void cmd_callback(const geometry_msgs::Twist& cmd_in)
+{
+	//Take in commands for u in ax+bu
+	
+	ux=cmd_in.linear.x; //in rads/sec
+	uy=cmd_in.linear.y; //in rads/sec
+	uz=cmd_in.linear.z; //in rads/sec
+	u1_old<< ux,uy,uz;
 }
 
 void get_new_residual_and_H(void){
@@ -232,10 +245,12 @@ int main(int argc, char** argv)
     ros::Rate loop_rate(45);
 	ros::Subscriber nav_sub;
 	ros::Subscriber imu_sub;
+	ros::Subscriber cmd_sub;
 	ros::Publisher state_pub;
 	
 	state_pub = node.advertise<std_msgs::Float32MultiArray> ("state_post_KF", 1);
 	nav_sub = node.subscribe("/ardrone/navdata", 1, state_callback);
+	cmd_sub = node.subscribe("/cmd_vel", 1, cmd_callback);
 	imu_sub = node.subscribe("/ardrone/imu", 1, Imu_callback);
 	
 
