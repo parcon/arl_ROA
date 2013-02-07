@@ -139,13 +139,13 @@ int main(int argc, char** argv)
 	ros::Subscriber joy_sub;
 	ros::Subscriber nav_sub;
 
-    pub_twist = node.advertise<geometry_msgs::Twist>("/cmd_vel", 1); 
-    pub_v3 = node.advertise<geometry_msgs::Vector3>("/joy_vel", 1); 
-	joy_sub = node.subscribe("/joy", 1, joy_callback);
-	nav_sub = node.subscribe("/ardrone/navdata", 1, nav_callback);	
-	pub_empty_reset = node.advertise<std_msgs::Empty>("/ardrone/reset", 1);
-	pub_empty_takeoff = node.advertise<std_msgs::Empty>("/ardrone/takeoff", 1);
-	pub_empty_land = node.advertise<std_msgs::Empty>("/ardrone/land", 1);
+    pub_twist = node.advertise<geometry_msgs::Twist>("cmd_vel", 1); 
+    pub_v3 = node.advertise<geometry_msgs::Vector3>("joy_vel", 1); 
+	joy_sub = node.subscribe("joy", 1, joy_callback);
+	nav_sub = node.subscribe("ardrone/navdata", 1, nav_callback);	
+	pub_empty_reset = node.advertise<std_msgs::Empty>("ardrone/reset", 1);
+	pub_empty_takeoff = node.advertise<std_msgs::Empty>("ardrone/takeoff", 1);
+	pub_empty_land = node.advertise<std_msgs::Empty>("ardrone/land", 1);
 	
     ROS_INFO("Starting Test Node, /cmd_vel = f(joy,quad velocity)");
  	while (ros::ok()) {
