@@ -1,10 +1,9 @@
 <launch>
 <arg name="QUAD_NAME" default="quad1" />
-<arg name="QUAD_IP" default="192.168.1.20" />
-<arg name="FIRST_QUAD" default="1" />
+<arg name="QUAD_IP" default="192.168.1.1" />
+<arg name="FIRST_QUAD" default="TRUE" />
 
-
-<node name="ARdrone_1" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" clear_params="true" args="-ip $(arg QUAD_IP)"> 
+<node name="ARdrone" pkg="ardrone_autonomy" type="ardrone_driver2" output="screen" respawn="true" clear_params="true" args="-ip $(arg QUAD_IP)"> 
 
 	    <param name="outdoor" value="0" />
 	    <param name="max_bitrate" value="4000" />
@@ -32,7 +31,10 @@
         <rosparam param="cov/imu_or">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 100000.0]</rosparam>
 	</node>
 
-	<node pkg="rxtools" type="rxplot" name="$(arg QUAD_NAME)_plot_battery" args="/ardrone/navdata/batteryPercent" />
+	<node pkg="rxtools" type="rxplot" name="$(arg QUAD_NAME)_battery" args="ardrone/navdata/batteryPercent" >
+	<param name="window_name" type="str" value="'$(arg QUAD_NAME) Battery Monitor'" />
+	</node>
+	
 	<node pkg="arl_ROA" type="kalman" name="$(arg QUAD_NAME)_Kalman_Filter"/>
 	
 	<node pkg="arl_ROA" type="joy_test_find_K" name="$(arg QUAD_NAME)_Quad_Controller"/>
@@ -48,6 +50,6 @@
 	<node pkg="image_view" type="image_view" respawn="false" name="$(arg QUAD_NAME)_imageviewer" output="screen">
             <param name="autosize" type="bool" value="TRUE" />
             <param name="window_name" type="str" value="'$(arg QUAD_NAME) Front Camera'" />
-            <remap from="image" to="$(arg QUAD_NAME)/ardrone/front/image_raw" />
+            <remap from="image" to="ardrone/front/image_raw" />
 </node>
 </launch>
