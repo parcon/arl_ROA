@@ -53,7 +53,7 @@ int main()
         runORCA(posAB[i],velA[i],velB[i],AgoalVel, maxVel, newVel);
         velA.push_back(newVel);
         // run ORCA for B->A
-        runORCA(posBA[i],velB[i],velA[i],BgoalVel, maxVel, newVel);
+        //runORCA(posBA[i],velB[i],velA[i],BgoalVel, maxVel, newVel);
         velB.push_back(newVel);
         // Update position of A
         posA.push_back(posA[i] + timeStep * velA[i+1]);

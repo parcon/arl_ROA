@@ -9,35 +9,33 @@
         Outputs: New collision-free velocity (new_v)
 
     Daman Bareiss
-    2/5/2013
-    3:05pm
+    2/8/2013
+    12:10pm
 */
 
 #include "runORCA.h"
-/*
-#include "Vector3.h" //     arl_RVO2_3D/Vector3.h
-#include "Agent.h"
-#include <cstddef>
-*/
+
 using namespace RVO;
         
 /* Search for the best new velocity. */
-void runORCA(const Vector3& pos_rel, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
+void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
 {
-    const float timeStep = 0.02;    // Time step of simulation
-    const float timeHorizon_ = 2.0; // Time horizon to check for collision
-
-    // Inverse of time horizon
-    const float invTimeHorizon = 1.0f / timeHorizon_;   
+    const float timeStep = 0.02;    // Simulation time step
+    const float timeHorizon = 2.0;    // Time horizon for collision checker
+    const float invTimeHorizon = 1.0f / timeHorizon;       // Inverse of time horizon
+    
+    // Relative position
+    Vector3 pos_rel = pos_b - pos_a;
 
     // Relative velocity of two quads
-    Vector3 vel_rel = vel_a-vel_b;                  
+    Vector3 vel_rel = vel_a-vel_b;
     
     // Distance between the two quads
     const float distSq = absSq(pos_rel);                
 
     // Combined radius of the two quads (m)
-    const float combinedRadius = 1.2;                   
+    //const float combinedRadius = 1.2;                   
+    const float combinedRadius = 2.0;
 
     // Square of combined radius of quads.
     const float combinedRadiusSq = sqr(combinedRadius); 
