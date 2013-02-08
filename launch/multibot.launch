@@ -29,13 +29,13 @@
         <rosparam param="cov/imu_la">[0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.1]</rosparam>
         <rosparam param="cov/imu_av">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
         <rosparam param="cov/imu_or">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 100000.0]</rosparam>
-	</node>
+</node>
 
 	<node pkg="rxtools" type="rxplot" name="$(arg QUAD_NAME)_battery" args="ardrone/navdata/batteryPercent" >
-	<param name="window_name" type="str" value="'$(arg QUAD_NAME) Battery Monitor'" />
 	</node>
 	
 	<node pkg="arl_ROA" type="kalman" name="$(arg QUAD_NAME)_Kalman_Filter"/>
+	<node pkg="arl_ROA" type="ORCA_3D" name="$(arg QUAD_NAME)_ORCA_3D"/>
 	
 	<node pkg="arl_ROA" type="joy_test_find_K" name="$(arg QUAD_NAME)_Quad_Controller"/>
 	
