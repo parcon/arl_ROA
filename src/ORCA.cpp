@@ -4,6 +4,8 @@
 #include <sstream>
 #include <geometry_msgs/Vector3.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <geometry_msgs/Twist.h>
+#include <ardrone_autonomy/Navdata.h>
 
 #include "Vector3.h" //     arl_RVO2_3D/Vector3.h
 #include "Agent.cpp"
@@ -88,7 +90,27 @@ void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, c
 		linearProgram4(orcaPlanes, planeFail, max_vel, new_vel);
 	}
 }
- 
+/* 
+void altd_controller(double vx_des,double vy_des,double altd_des,double Kp, double Kd,double max_speed)
+{
+		geometry_msgs::Twist twist_msg_gen;
+	
+		cmd_x=Kp*(vx_des-drone_vx); //-Kd *drone_vx_	; //{-1 to 1}=K*( m/s - m/s)
+		cmd_y=Kp*(vy_des-drone_vy); 
+		//cmd_z=Kp*(vz_des-drone_vz);
+		cmd_z=Kp*(altd_des-drone_altd);
+		twist_msg_gen.angular.x=1.0; 
+		twist_msg_gen.angular.y=1.0;
+		twist_msg_gen.angular.z=0.0;
+		
+		if (cmd_z > max_speed)
+			{cmd_z=1.0;}
+		if (cmd_z < 0.0)
+			{cmd_z=0.0;}
+		std::vector result(cmd_z
+		return 
+}	
+*/
 
 //Globals for callback
 Vector3 posB_in;
@@ -97,70 +119,120 @@ Vector3 velB_in;
 Vector3 AgoalVel_in;
 int had_message =0;
 int had_message2 =0;
+float maxVel = 0.5;      // max possible velocity of agent
+double Kp= 1.0;
+double Kd= 0.5;
+double des_altd= 1.0;
+
+double drone_vx_, drone_vy_ , drone_vz_;
+double drone_ax_, drone_ay_ , drone_az_, drone_altd_;
+double drone_vx, drone_vy , drone_vz;
+double drone_ax, drone_ay , drone_az, drone_altd;
+
+double map(double value, double in_min, double in_max, double out_min, double out_max) {
+  return (double)((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+}
+
+geometry_msgs::Twist twist_controller(std::vector<double> v_des,double K)
+{
+		geometry_msgs::Twist twist_msg_gen;
+		
+		
+		twist_msg_gen.linear.x=K*(v_des[0]-drone_vx_); //{-1 to 1}=K*( m/s - m/s)
+		twist_msg_gen.linear.y=K*(v_des[1]-drone_vy_); 
+		twist_msg_gen.linear.z=K*(v_des[2]-drone_vz_);
+		twist_msg_gen.angular.x=1.0; 
+		twist_msg_gen.angular.y=1.0;
+		twist_msg_gen.angular.z=0.0;
+	
+		twist_msg_gen.linear.x= map(twist_msg_gen.linear.x, -maxVel, maxVel, -1.0, 1.0);
+		twist_msg_gen.linear.y= map(twist_msg_gen.linear.y, -maxVel, maxVel, -1.0, 1.0);
+		twist_msg_gen.linear.z= map(twist_msg_gen.linear.z, -maxVel, maxVel, -1.0, 1.0);
+		return twist_msg_gen;
+}
 
 void kalman_callback(const std_msgs::Float32MultiArray& state_in)
 {
 	//Take in state post KF and put into vels and relative state for orca
 
-posB_in[0]=state_in.data[0];
-posB_in[1]=state_in.data[1];
-posB_in[2]=state_in.data[2];
+	posB_in[0]=state_in.data[0];
+	posB_in[1]=state_in.data[1];
+	posB_in[2]=state_in.data[2];
 
-velA_in[0]=state_in.data[3];
-velA_in[1]=state_in.data[4];
-velA_in[2]=state_in.data[5];
+	velA_in[0]=state_in.data[3];
+	velA_in[1]=state_in.data[4];
+	velA_in[2]=state_in.data[5];
 
-velB_in[0]=state_in.data[6];
-velB_in[1]=state_in.data[7];
-velB_in[2]=state_in.data[8];
+	velB_in[0]=state_in.data[6];
+	velB_in[1]=state_in.data[7];
+	velB_in[2]=state_in.data[8];
 
-had_message=1;
+	had_message=1;
+}
+
+void nav_callback(const ardrone_autonomy::Navdata& msg_in)
+{
+	//Take in state of ardrone	
+	drone_vx_=msg_in.vx*0.001; //[mm/s] to [m/s]
+	drone_vy_=msg_in.vy*0.001;	
+	drone_vz_=msg_in.vz*0.001;
+	drone_altd_=msg_in.altd*0.001;
+	
+	drone_ax_=msg_in.ax*9.8; //[g] to [m/s2]
+	drone_ay_=msg_in.ay*9.8;	
+	drone_az_=msg_in.az*9.8;
+		
+	//drone_state=msg_in.state;	
+	//ROS_INFO("getting sensor reading");	
 }
 
 void joy_callback(const geometry_msgs::Vector3& joy_in)
 {
 	//Take in state post KF and put into vels and relative state for orca
-
-AgoalVel_in[0]=joy_in.x;
-AgoalVel_in[1]=joy_in.y;
-AgoalVel_in[2]=joy_in.z;
-
-had_message2=1;
+	AgoalVel_in[0]=joy_in.x;
+	AgoalVel_in[1]=joy_in.y;
+	AgoalVel_in[2]=joy_in.z;
+	had_message2=1;
 }
 
 int main(int argc, char **argv)
 {
     ros::init(argc,argv,"ORCA_3D");  // Initialize ROS
     ros::NodeHandle n;                  // declare node handle
+    ros::Rate loop_rate(50);    // Set frequency of rosnode
     ros::Publisher pub_posA, pub_posB;  // Setup position publishers
     ros::Publisher pub_velA, pub_velB;  // Setup velocity publishers
     ros::Subscriber sub_state; 
-    ros::Subscriber sub_joy; 
+    ros::Subscriber sub_joy;
+    ros::Subscriber sub_nav;
+   	ros::Publisher pub_twist; 
 
-    pub_posA = n.advertise<geometry_msgs::Vector3>("posA",1); // Set advertiser for posA
-    pub_posB = n.advertise<geometry_msgs::Vector3>("posB",1); // Set advertiser for posB
-    pub_velA = n.advertise<geometry_msgs::Vector3>("velA",1); // Set advertiser for velA
-    pub_velB = n.advertise<geometry_msgs::Vector3>("velB",1); // Set advertiser for velB
+	sub_nav = n.subscribe("ardrone/navdata", 1, nav_callback);
+    pub_velA = n.advertise<geometry_msgs::Vector3>("cmd_vel_u",1); // Set advertiser for velA
     sub_state= n.subscribe("state_post_KF", 1, kalman_callback);
     sub_joy= n.subscribe("joy_vel", 1, joy_callback);
+    pub_twist = n.advertise<geometry_msgs::Twist>("cmd_vel", 1); 
 
-    ros::Rate loop_rate(50);    // Set frequency of rosnode
+    
 
     geometry_msgs::Vector3 posA_msg, posB_msg; // Set position value for in sim
     geometry_msgs::Vector3 velA_msg, velB_msg; // Set velocity value for in sim
- 
-
-
+ 	geometry_msgs::Twist cmd_vel_twist;
     // State parameters
-    float maxVel = 0.5;      // max possible velocity of agent
-    Vector3 posB;   // Position of B rel to A, but since A is at (0,0,0) relAB = posB
-    Vector3 velA, velB;  // Velocity of A, Velocity of B
-    Vector3 newVel;                    // Velocity that will come out of ORCA
+    Vector3 posB(0.0,0.0,0.0);   // Position of B rel to A, but since A is at (0,0,0) relAB = posB
+    Vector3 velA(0.0,0.0,0.0);
+    Vector3 velB(0.0,0.0,0.0);  // Velocity of A, Velocity of B
+    Vector3 newVel(0.0,0.0,0.0);                    // Velocity that will come out of ORCA
 	Vector3 AgoalVel(0.0,0.0,0.0);
 	Vector3 empty_vec(0.0,0.0,0.0);
 
     ROS_INFO("Starting the ORCA node.");    
 
+	while ( (had_message ==0) || (had_message2 ==0) )
+	{
+	ros::spinOnce();
+	loop_rate.sleep();
+	}
 
     while(ros::ok() && had_message && had_message2)
     {
@@ -180,21 +252,23 @@ int main(int argc, char **argv)
 		posB=posB_in;
 		AgoalVel=AgoalVel_in;
 
-            // run ORCA for A->B
-            runORCA(empty_vec,posB, velA, velB, AgoalVel, maxVel, newVel);
-            velA=newVel;
+        // run ORCA for A->B
+        runORCA(empty_vec,posB, velA, velB, AgoalVel, maxVel, newVel);
+		std::vector<double> cmd_vel_temp;
+		cmd_vel_temp[0]=newVel[0];
+		cmd_vel_temp[1]=newVel[1];
+		cmd_vel_temp[2]=newVel[2];
 
+		cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
 
+		velA=newVel;
         velA_msg.x = velA[0];
         velA_msg.y = velA[1];
         velA_msg.z = velA[2];
         pub_velA.publish(velA_msg);
+        pub_twist.publish(cmd_vel_twist);
   
         ros::spinOnce();
         loop_rate.sleep();
-     
-    }
-
-
-    return 0;
+     }
 }

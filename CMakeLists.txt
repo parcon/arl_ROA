@@ -29,6 +29,7 @@ rosbuild_add_executable(ORCA_3D src/ORCA.cpp)
 include_directories(${PROJECT_SOURCE_DIR}/RVO2_3D/)	
 
 rosbuild_add_executable(test_find_K src/test_fly_find_K.cpp)
+rosbuild_add_executable(drone_control src/ardrone_controller.cpp)
 rosbuild_add_executable(joy_test_find_K src/fly_from_joy_test_K.cpp)
 
 #common commands for building c++ executables and libraries

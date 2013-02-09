@@ -66,13 +66,12 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	drone_ax_=msg_in.ax*9.8; //[g] to [m/s2]
 	drone_ay_=msg_in.ay*9.8;	
 	drone_az_=msg_in.az*9.8;
-	
-	
+		
 	drone_state=msg_in.state;	
 	//ROS_INFO("getting sensor reading");	
 }
 
-//void test_controller(double vx_des,double vy_des,double vz_des,double Kp, double Kd)
+
 void test_controller(double vx_des,double vy_des,double altd_des,double Kp, double Kd)
 {
 		geometry_msgs::Twist twist_msg_gen;
