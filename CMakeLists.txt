@@ -24,13 +24,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 include_directories(${Eigen_INCLUDE_DIRS})
 
 rosbuild_add_executable(kalman src/kalman.cpp)
-
+rosbuild_add_executable(drone_control src/ardrone_controller.cpp)
 rosbuild_add_executable(ORCA_3D src/ORCA.cpp)
 include_directories(${PROJECT_SOURCE_DIR}/RVO2_3D/)	
 
-rosbuild_add_executable(test_find_K src/test_fly_find_K.cpp)
-rosbuild_add_executable(drone_control src/ardrone_controller.cpp)
-rosbuild_add_executable(joy_test_find_K src/fly_from_joy_test_K.cpp)
+#old things:
+#rosbuild_add_executable(joy_test_find_K src/fly_from_joy_test_K.cpp)
+#rosbuild_add_executable(test_find_K src/test_fly_find_K.cpp)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

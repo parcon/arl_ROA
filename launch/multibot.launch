@@ -3,7 +3,7 @@
 <arg name="QUAD_IP" default="192.168.1.1" />
 <arg name="FIRST_QUAD" default="TRUE" />
 
-<node name="ARdrone" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" respawn="true" clear_params="true" args="-ip $(arg QUAD_IP)"> 
+<node name="Drone_Drivers" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" respawn="true" clear_params="true" args="-ip $(arg QUAD_IP)"> 
 
 	    <param name="outdoor" value="0" />
 	    <param name="max_bitrate" value="4000" />
@@ -30,24 +30,22 @@
         <rosparam param="cov/imu_av">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]</rosparam>
         <rosparam param="cov/imu_or">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 100000.0]</rosparam>
 </node>
-
-	<node pkg="rxtools" type="rxplot" name="$(arg QUAD_NAME)_battery" args="ardrone/navdata/batteryPercent" >
-	</node>
 	
-	<node pkg="arl_ROA" type="kalman" name="$(arg QUAD_NAME)_Kalman_Filter"/>
-	<node pkg="arl_ROA" type="ORCA_3D" name="$(arg QUAD_NAME)_ORCA_3D"/>
-	
-	<node pkg="arl_ROA" type="joy_test_find_K" name="$(arg QUAD_NAME)_Quad_Controller"/>
+	<node pkg="arl_ROA" type="kalman" name="Kalman_Filter" respawn="true"/>
+	<node pkg="arl_ROA" type="ORCA_3D" name="ORCA_3D" respawn="true"/>
+	<node pkg="arl_ROA" type="drone_control" name="Drone_Controller" respawn="true"/> 
 	
 	<group if="$(arg FIRST_QUAD)">
-	<node pkg="joy" type="joy_node" name="$(arg QUAD_NAME)_Xbox_Controller" args="/dev/input/js0"/>
+	<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js0" respawn="true"/>
 	</group>
 	
 	<group unless="$(arg FIRST_QUAD)">
-	<node pkg="joy" type="joy_node" name="$(arg QUAD_NAME)_Xbox_Controller" args="/dev/input/js1"/>
+	<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js1" respawn="true"/>
 	</group>
 	
-	<node pkg="image_view" type="image_view" respawn="false" name="$(arg QUAD_NAME)_imageviewer" output="screen">
+	<node pkg="rxtools" type="rxplot" name="Battery_Monitor" args="ardrone/navdata/batteryPercent" />
+	
+	<node pkg="image_view" type="image_view" respawn="false" name="Front_Camera_Viewer" output="screen">
             <param name="autosize" type="bool" value="TRUE" />
             <param name="window_name" type="str" value="'$(arg QUAD_NAME) Front Camera'" />
             <remap from="image" to="ardrone/front/image_raw" />

@@ -114,13 +114,13 @@ void Imu_callback(const sensor_msgs::Imu& imu_in)
 	w_yaw=imu_in.angular_velocity.z; //in rads/sec
 }
 
-void cmd_callback(const geometry_msgs::Twist& cmd_in)
+void cmd_callback(const geometry_msgs::Vector3& cmd_in)
 {
 	//Take in commands for u in ax+bu
 	
-	ux=cmd_in.linear.x; //in rads/sec
-	uy=cmd_in.linear.y; //in rads/sec
-	uz=cmd_in.linear.z; //in rads/sec
+	ux=cmd_in.x; //in rads/sec
+	uy=cmd_in.y; //in rads/sec
+	uz=cmd_in.z; //in rads/sec
 	u1_old<< ux,uy,uz;
 }
 
@@ -249,9 +249,9 @@ int main(int argc, char** argv)
 	ros::Publisher state_pub;
 	
 	state_pub = node.advertise<std_msgs::Float32MultiArray> ("state_post_KF", 1);
-	nav_sub = node.subscribe("/ardrone/navdata", 1, state_callback);
-	cmd_sub = node.subscribe("/cmd_vel", 1, cmd_callback);
-	imu_sub = node.subscribe("/ardrone/imu", 1, Imu_callback);
+	nav_sub = node.subscribe("ardrone/navdata", 1, state_callback);
+	cmd_sub = node.subscribe("cmd_vel_u", 1, cmd_callback);
+	imu_sub = node.subscribe("ardrone/imu", 1, Imu_callback);
 	
 
 	init_matrix(); //Setup Matrices 
@@ -322,5 +322,5 @@ int main(int argc, char** argv)
 		loop_rate.sleep();
 		}//while ros ok
 		
-	
+	ROS_ERROR("Kalman has exited");
 }//main

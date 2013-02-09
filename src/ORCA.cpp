@@ -133,19 +133,18 @@ double map(double value, double in_min, double in_max, double out_min, double ou
   return (double)((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
 }
 
-geometry_msgs::Twist twist_controller(std::vector<double> v_des,double K)
+geometry_msgs::Twist twist_controller(geometry_msgs::Vector3 v_des,double K)
 {
 		geometry_msgs::Twist twist_msg_gen;
-		
-		
-		twist_msg_gen.linear.x=K*(v_des[0]-drone_vx_); //{-1 to 1}=K*( m/s - m/s)
-		twist_msg_gen.linear.y=K*(v_des[1]-drone_vy_); 
-		twist_msg_gen.linear.z=K*(v_des[2]-drone_vz_);
+				
+		twist_msg_gen.linear.x=K*(v_des.x-drone_vx_); 
+		twist_msg_gen.linear.y=K*(v_des.y-drone_vy_); 
+		twist_msg_gen.linear.z=K*(v_des.z-drone_vz_);
 		twist_msg_gen.angular.x=1.0; 
 		twist_msg_gen.angular.y=1.0;
 		twist_msg_gen.angular.z=0.0;
 	
-		twist_msg_gen.linear.x= map(twist_msg_gen.linear.x, -maxVel, maxVel, -1.0, 1.0);
+		twist_msg_gen.linear.x= map(twist_msg_gen.linear.x, -maxVel, maxVel, -1.0, 1.0);  //{-1 to 1}=K*( m/s - m/s)
 		twist_msg_gen.linear.y= map(twist_msg_gen.linear.y, -maxVel, maxVel, -1.0, 1.0);
 		twist_msg_gen.linear.z= map(twist_msg_gen.linear.z, -maxVel, maxVel, -1.0, 1.0);
 		return twist_msg_gen;
@@ -213,10 +212,9 @@ int main(int argc, char **argv)
     sub_joy= n.subscribe("joy_vel", 1, joy_callback);
     pub_twist = n.advertise<geometry_msgs::Twist>("cmd_vel", 1); 
 
-    
-
-    geometry_msgs::Vector3 posA_msg, posB_msg; // Set position value for in sim
-    geometry_msgs::Vector3 velA_msg, velB_msg; // Set velocity value for in sim
+   // geometry_msgs::Vector3 posA_msg, posB_msg; // Set position value for in sim
+    geometry_msgs::Vector3 cmd_vel_u_msg;
+    //, velB_msg; // Set velocity value for in sim
  	geometry_msgs::Twist cmd_vel_twist;
     // State parameters
     Vector3 posB(0.0,0.0,0.0);   // Position of B rel to A, but since A is at (0,0,0) relAB = posB
@@ -226,7 +224,7 @@ int main(int argc, char **argv)
 	Vector3 AgoalVel(0.0,0.0,0.0);
 	Vector3 empty_vec(0.0,0.0,0.0);
 
-    ROS_INFO("Starting the ORCA node.");    
+    ROS_INFO("Starting the ORCA node");    
 
 	while ( (had_message ==0) || (had_message2 ==0) )
 	{
@@ -251,24 +249,26 @@ int main(int argc, char **argv)
         velB=velB_in;
 		posB=posB_in;
 		AgoalVel=AgoalVel_in;
-
+ 
         // run ORCA for A->B
         runORCA(empty_vec,posB, velA, velB, AgoalVel, maxVel, newVel);
-		std::vector<double> cmd_vel_temp;
-		cmd_vel_temp[0]=newVel[0];
-		cmd_vel_temp[1]=newVel[1];
-		cmd_vel_temp[2]=newVel[2];
+
+		geometry_msgs::Vector3 cmd_vel_temp;
+		cmd_vel_temp.x=newVel[0];
+		cmd_vel_temp.y=newVel[1];
+		cmd_vel_temp.z=newVel[2];
 
 		cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
-
-		velA=newVel;
-        velA_msg.x = velA[0];
-        velA_msg.y = velA[1];
-        velA_msg.z = velA[2];
-        pub_velA.publish(velA_msg);
+ 
+        cmd_vel_u_msg.x = newVel[0];
+        cmd_vel_u_msg.y = newVel[1];
+        cmd_vel_u_msg.z = newVel[2];
+        pub_velA.publish(cmd_vel_u_msg);
         pub_twist.publish(cmd_vel_twist);
-  
+
         ros::spinOnce();
         loop_rate.sleep();
      }
+     return 0;
+     ROS_ERROR("ORCA_3D has exited");
 }
