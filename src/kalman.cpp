@@ -75,6 +75,9 @@ uint32_t tags_width[10];
 uint32_t tags_height[10];
 float tags_orientation[10];
 float tags_distance[10];
+tags_distance[tag_id]=0;
+tags_xc[tag_id]=0;
+tags_yctag_idi]=0;
 double time_stamp;
 int had_message_1 =0;
 int had_message_2 =0;
@@ -99,9 +102,9 @@ void state_callback(const ardrone_autonomy::Navdata& msg_in)
 		tags_distance[i]=msg_in.tags_distance[i]*0.01; // cm to m
 		tags_xc[i]=msg_in.tags_xc[i];
 		tags_yc[i]=msg_in.tags_yc[i];
-		tags_width[i]=msg_in.tags_width[i];
-		tags_height[i]=msg_in.tags_height[i];
-		tags_orientation[i]=msg_in.tags_orientation[i];
+		//tags_width[i]=msg_in.tags_width[i];
+		//tags_height[i]=msg_in.tags_height[i];
+		//tags_orientation[i]=msg_in.tags_orientation[i];
 	   }
 }
 
