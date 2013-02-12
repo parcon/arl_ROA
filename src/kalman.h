@@ -1,6 +1,8 @@
 //matrix work for kalman
 
 
+const int ROS_RATE = 40;
+float ROS_HZ = 1/ROS_RATE;
 //part one
 const int dimention_n = 9; //length of state vector
 const int dimention_m= 6; //length of observation vetor
@@ -22,8 +24,7 @@ error_cov I;
 obs_to_state K;
 state_to_obs H;
 state_to_obs H_trans;
-control_model B1;
-control_model B2;
+control_model B;
 dynamics_model A;
 dynamics_model A_trans;
 error_cov Q;
@@ -53,6 +54,31 @@ void init_matrix(void){
 	float k1= 0.25;
 	float k2= 0.5;
 
+//I
+I<<Eigen::Matrix<float, dimention_n, dimention_n>::Identity();
+
+//Q
+Q=I;
+
+//R
+R=Eigen::Matrix<float, dimention_m, dimention_m>::Identity();
+R(0,0)=100;
+R(1,1)=100;
+R(2,2)=.1;
+
+//P_old
+P_old=I;
+
+//u1
+//u1<< 0,0,0;
+
+//u1_old
+u1_old<< 0,0,0;
+
+//x_old
+//x_old <<1,1,1, 0,1,0,  1,0,1;
+x_old <<0,0,0, 0,0,0,  0,0,0;
+
 //A
 A<< 0,0,0, 1,0,0, -1,0,0,  //first line
 	0,0,0, 0,1,0, 0,-1,0,  //2nd line
@@ -66,12 +92,13 @@ A<< 0,0,0, 1,0,0, -1,0,0,  //first line
 	0,0,0, 0,0,0, 0,-k1,0,   //8 line
 	0,0,0, 0,0,0, 0,0,-k2; //9 line
 
+A=(ROS_HZ*A+I); //discritize 
 std::cout << "A" << std::endl;
 std::cout << A << std::endl;
 
 
 //B1
-B1<<0,0,0, //1
+B<< 0,0,0, //1
 	0,0,0, //2
 	0,0,0, //3
 
@@ -83,9 +110,10 @@ B1<<0,0,0, //1
 	0,0,0, //8
 	0,0,0; //9
 
+B=B*ROS_HZ;  //discritize
 std::cout << std::endl;
-std::cout << "B1" << std::endl;
-std::cout << B1 << std::endl;
+std::cout << "B" << std::endl;
+std::cout << B << std::endl;
 
 //H
 H<< 0,0,0, 0,0,0,   0,0,0,  
@@ -101,24 +129,5 @@ std::cout << "H" << std::endl;
 std::cout << H << std::endl;
 
 
-//I
-I<<Eigen::Matrix<float, dimention_n, dimention_n>::Identity();
 
-//Q
-Q=I;
-
-//R
-R=Eigen::Matrix<float, dimention_m, dimention_m>::Identity();
-
-//P_old
-P_old=I;
-
-//u1
-u1<< 0,0,0;
-
-//u1_old
-u1_old<< 0,0,0;
-
-//x_old
-x_old <<1,1,1, 0,1,0,  1,0,1;
 }//end matrix setup

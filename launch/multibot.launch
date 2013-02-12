@@ -31,9 +31,19 @@
         <rosparam param="cov/imu_or">[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 100000.0]</rosparam>
 </node>
 	
+
+  <node pkg="imu_filter_madgwick" type="imu_filter_node" name="robot_pose_est">
+  <remap from="imu/data_raw" to="ardrone/imu"/>
+    <remap from="imu/mag" to="ardrone/mag"/>
+  <!--<param name="~use_mag" value="false"/>-->
+  
+  </node>
+
+
 	<node pkg="arl_ROA" type="kalman" name="Kalman_Filter" respawn="true"/>
 	<node pkg="arl_ROA" type="ORCA_3D" name="ORCA_3D" respawn="true"/>
 	<node pkg="arl_ROA" type="drone_control" name="Drone_Controller" respawn="true"/> 
+	<node pkg="arl_ROA" type="tag_tf" name="Tag_TF" respawn="true"/> 
 	
 	<group if="$(arg FIRST_QUAD)">
 	<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js0" respawn="true"/>
@@ -44,6 +54,7 @@
 	</group>
 	
 	<node pkg="rxtools" type="rxplot" name="Battery_Monitor" args="ardrone/navdata/batteryPercent" />
+	<!-- <node pkg="rxtools" type="rxplot" name="Tag_monitor" args="$(arg FIRST_QUAD)/state_post_KF/0" /> -->
 	
 	<node pkg="image_view" type="image_view" respawn="false" name="Front_Camera_Viewer" output="screen">
             <param name="autosize" type="bool" value="TRUE" />

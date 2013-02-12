@@ -30,8 +30,6 @@ v is measurement white noise ~ N(0,R)
 #include "kalman.h"
 #include <math.h>
 
-//Matrix part one taken from here PARCON
-
 std_msgs::Float32MultiArray x_msg;
 float deg2rad= 0.0174532925;
 float rotation_roll =0.0;
@@ -57,15 +55,16 @@ float wr1_hat;
 float ux, uy, uz;
 
 
-int tag_id =0;//CHANGES WHICH TAG TO DISPLAY
+const int tag_id =0;//CHANGES WHICH TAG TO DISPLAY
 float vision_angle[2];
 float tag_position[3];
 int cam_height=360;
 int cam_width=640;
 float cam_width_rads=92*deg2rad;
 float cam_height_rads=51*deg2rad; //cam_width_degree*(cam_height/cam_width) //NOT MEASURED
-const float focal_length = .004;//[pixel/m] [???????????????]
-const float center2camera_length = .004;// [m] [???????????????]
+
+const float focal_length = 1.0;//.004; //[pixel/m * m] [???????????????]
+const float center2camera_length = .07;// [m] [???????????????]
 
 uint32_t tags_count;
 uint32_t tags_type[10];
@@ -75,9 +74,6 @@ uint32_t tags_width[10];
 uint32_t tags_height[10];
 float tags_orientation[10];
 float tags_distance[10];
-tags_distance[tag_id]=0;
-tags_xc[tag_id]=0;
-tags_yctag_idi]=0;
 double time_stamp;
 int had_message_1 =0;
 int had_message_2 =0;
@@ -106,6 +102,13 @@ void state_callback(const ardrone_autonomy::Navdata& msg_in)
 		//tags_height[i]=msg_in.tags_height[i];
 		//tags_orientation[i]=msg_in.tags_orientation[i];
 	   }
+	 if(tags_count==0)
+	 {
+	tags_distance[0]=0; // cm to m
+	tags_xc[0]=0;
+	tags_yc[0]=0;
+	 }
+	   
 }
 
 void Imu_callback(const sensor_msgs::Imu& imu_in)
@@ -121,9 +124,9 @@ void cmd_callback(const geometry_msgs::Vector3& cmd_in)
 {
 	//Take in commands for u in ax+bu
 	
-	ux=cmd_in.x; //in rads/sec
-	uy=cmd_in.y; //in rads/sec
-	uz=cmd_in.z; //in rads/sec
+	ux=cmd_in.x; //in m/sec
+	uy=cmd_in.y; //in m/sec
+	uz=cmd_in.z; //in m/sec
 	u1_old<< ux,uy,uz;
 }
 
@@ -131,13 +134,15 @@ void get_new_residual_and_H(void){
 
 	//UPDATE Z
 	//z = [uy uz d v1x v1y v1z]T
-	z(0)=(float)tags_xc[tag_id]; //global y vector
-	z(1)=(float)tags_yc[tag_id]; // global z vector
+	z(0)=(float)((int)tags_xc[tag_id]-500); //global y vector
+	z(1)=(float)((int)tags_yc[tag_id]-500); // global z vector
 	z(2)=(float)tags_distance[tag_id];
 	z(3)=vel_x;
 	z(4)=vel_y;
 	z(5)=vel_z;
-		
+	
+	ROS_INFO("Observation; TAG %f %f %f  VEL %f %f %f",z(0),z(1),z(2),z(3),z(4),z(5));
+	
 	x12_hat=x_minus(0); //estamate of position between rotors
 	y12_hat=x_minus(1);
 	z12_hat=x_minus(2);
@@ -166,6 +171,13 @@ void get_new_residual_and_H(void){
 	
 	y(2)=z(2)-sqr_xyz; //error in distance away
 
+	ROS_INFO("mesurment model %f %f %f",focal_length*( 
+	(y12_hat*cos(rotation_roll)+sin(rotation_roll)*
+	(z12_hat*cos(rotation_pitch)+x12_hat*sin(rotation_pitch))
+	/
+	(-center2camera_length+x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch) ) )
+	),focal_length*( (y12_hat*sin(rotation_roll)-cos(rotation_roll)*(z12_hat*cos(rotation_pitch)+x12_hat*sin(rotation_pitch))/
+	(center2camera_length-x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch) ) )),sqr_xyz);
 	//linear parts
 	y(3)=z(3)- vx1_hat; //error in vx of quad1
 	y(4)=z(4)- vy1_hat; //error in vy of quad1
@@ -212,15 +224,6 @@ void get_new_residual_and_H(void){
 	float dd_dy=y12_hat/sqr_xyz;
 	float dd_dz=z12_hat/sqr_xyz;
 
-	std::cout <<"sqr_xyz"<<std::endl;
-	std::cout << sqr_xyz << std::endl;
-	
-	std::cout <<"z12_hat"<<std::endl;
-	std::cout << z12_hat << std::endl;
-
-	std::cout <<"dd_dz"<<std::endl;
-	std::cout << dd_dz << std::endl;
-
 	if (sqr_xyz==0) //check for divide by zero
 	{
 		H(2,0)=0; 
@@ -245,7 +248,7 @@ int main(int argc, char** argv)
 	ROS_INFO("Starting Kalman");
 	ros::init(argc, argv,"Kalman");
     ros::NodeHandle node;
-    ros::Rate loop_rate(45);
+    ros::Rate loop_rate(ROS_RATE);
 	ros::Subscriber nav_sub;
 	ros::Subscriber imu_sub;
 	ros::Subscriber cmd_sub;
@@ -270,7 +273,7 @@ int main(int argc, char** argv)
 	while (ros::ok() && had_message_1 && had_message_2){
 			
 		//Prediction Step
-		x_minus=A*x_old+B1*u1_old;
+		x_minus=A*x_old+B*u1_old;
 		P_minus=A*P_old*A.transpose() + Q;
 		get_new_residual_and_H();
 		//Correction Step
@@ -279,32 +282,7 @@ int main(int argc, char** argv)
 		x=x_minus+K*y;
 		P=(I-K*H)*P_minus;
 
-		std::cout <<"x"<<std::endl;
-		std::cout << x << std::endl;
-		
-		std::cout << "y" << std::endl;
-		std::cout << y << std::endl;
-	/*	
-		std::cout <<"x_minus"<<std::endl;
-		std::cout << x_minus << std::endl;
-		
-		std::cout << "z" << std::endl;
-		std::cout << z << std::endl;
-		
-
-		
-		std::cout << "H" << std::endl;
-		std::cout << H << std::endl;
-		
-		std::cout <<"R"<<std::endl;
-		std::cout << R << std::endl;
-		  
-		std::cout <<"O"<<std::endl;
-		std::cout << O << std::endl;
-		
-		std::cout <<"K"<<std::endl;
-		std::cout << K << std::endl;
-	*/  
+ 
 	 	x_msg.data.clear(); //clear data
 		float move =0.0;
 	    for (long int i=0; i<dimention_n; i++)
@@ -313,13 +291,16 @@ int main(int argc, char** argv)
 			x_msg.data.push_back(move);//fill msg
 			}
 		
-//		std::cout << x_msg << std::endl;
+		ROS_INFO("State; Tag %f %f %f  ",x(0),x(1),x(2));
+		ROS_INFO("State; vel1 %f %f %f  ",x(3),x(4),x(5));
+		ROS_INFO("State; vel2 %f %f %f  ",x(6),x(7),x(8));
+		
 		state_pub.publish(x_msg); //publish message
 		
 		x_old=x;
 		P_old=P;
-		u1_old=u1;
-		u2_old=u2;
+		//u1_old=u1;
+		//u2_old=u2;
 		
 		ros::spinOnce();
 		loop_rate.sleep();

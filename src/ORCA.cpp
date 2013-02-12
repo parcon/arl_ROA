@@ -19,7 +19,7 @@ using namespace RVO;
 void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
 {
     const float timeStep = 0.02;    // Simulation time step
-    const float timeHorizon = 2.0;    // Time horizon for collision checker
+    const float timeHorizon = .001;    // Time horizon for collision checker
     const float invTimeHorizon = 1.0f / timeHorizon;       // Inverse of time horizon
     
     // Relative position
