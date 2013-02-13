@@ -25,6 +25,7 @@ include_directories(${Eigen_INCLUDE_DIRS})
 
 rosbuild_add_executable(kalman src/kalman.cpp)
 rosbuild_add_executable(tag_tf src/tf_pub.cpp)
+rosbuild_add_executable(track_tf src/tf_pub_tracker.cpp)
 rosbuild_add_executable(drone_control src/ardrone_controller.cpp)
 rosbuild_add_executable(ORCA_3D src/ORCA.cpp)
 include_directories(${PROJECT_SOURCE_DIR}/RVO2_3D/)	

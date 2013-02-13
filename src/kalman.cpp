@@ -64,6 +64,10 @@ float cam_width_rads=92*deg2rad;
 float cam_height_rads=51*deg2rad; //cam_width_degree*(cam_height/cam_width) //NOT MEASURED
 
 const float focal_length = 1.0;//.004; //[pixel/m * m] [???????????????]
+
+const float focal_length_uy = 729.0;// [pixel/m * m]
+const float focal_length_uz = 1350.0;// [pixel/m * m] 
+
 const float center2camera_length = .07;// [m] [???????????????]
 
 uint32_t tags_count;
@@ -134,8 +138,8 @@ void get_new_residual_and_H(void){
 
 	//UPDATE Z
 	//z = [uy uz d v1x v1y v1z]T
-	z(0)=(float)((int)tags_xc[tag_id]-500); //global y vector
-	z(1)=(float)((int)tags_yc[tag_id]-500); // global z vector
+	z(0)=(float)((int)tags_xc[tag_id]-500)*-1.0; //global y vector
+	z(1)=(float)((int)tags_yc[tag_id]-500)*-1.0; // global z vector
 	z(2)=(float)tags_distance[tag_id];
 	z(3)=vel_x;
 	z(4)=vel_y;
@@ -159,24 +163,24 @@ void get_new_residual_and_H(void){
 	float sqr_xyz= pow(pow((float)x12_hat,2)+pow((float)y12_hat,2)+pow((float)z12_hat,2),0.5);
 	
 	
-	y(0)=z(0)-focal_length*( 
+	y(0)=z(0)-focal_length_uy*( 
 	(y12_hat*cos(rotation_roll)+sin(rotation_roll)*
 	(z12_hat*cos(rotation_pitch)+x12_hat*sin(rotation_pitch))
 	/
 	(-center2camera_length+x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch) ) )
 	); //error in uy
 	
-	y(1)=z(1)-focal_length*( (y12_hat*sin(rotation_roll)-cos(rotation_roll)*(z12_hat*cos(rotation_pitch)+x12_hat*sin(rotation_pitch))/
+	y(1)=z(1)-focal_length_uz*( (y12_hat*sin(rotation_roll)-cos(rotation_roll)*(z12_hat*cos(rotation_pitch)+x12_hat*sin(rotation_pitch))/
 	(center2camera_length-x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch) ) )); //error in uz
 	
 	y(2)=z(2)-sqr_xyz; //error in distance away
 
-	ROS_INFO("mesurment model %f %f %f",focal_length*( 
+	ROS_INFO("mesurment model %f %f %f",focal_length_uy*( 
 	(y12_hat*cos(rotation_roll)+sin(rotation_roll)*
 	(z12_hat*cos(rotation_pitch)+x12_hat*sin(rotation_pitch))
 	/
 	(-center2camera_length+x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch) ) )
-	),focal_length*( (y12_hat*sin(rotation_roll)-cos(rotation_roll)*(z12_hat*cos(rotation_pitch)+x12_hat*sin(rotation_pitch))/
+	),focal_length_uz*( (y12_hat*sin(rotation_roll)-cos(rotation_roll)*(z12_hat*cos(rotation_pitch)+x12_hat*sin(rotation_pitch))/
 	(center2camera_length-x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch) ) )),sqr_xyz);
 	//linear parts
 	y(3)=z(3)- vx1_hat; //error in vx of quad1
@@ -191,15 +195,15 @@ void get_new_residual_and_H(void){
 	
 	//H 1st row (uy)
 	
-	H(0,0)=-focal_length*
+	H(0,0)=-focal_length_uy*
 	( 
 	(y12_hat*cos(rotation_roll)*cos(rotation_pitch)+sin(rotation_roll)*(z12_hat+center2camera_length*sin(rotation_pitch)) )
 	/
 	( pow(center2camera_length-x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch) ,2) 	)
 	); //duy dx12
 	
-	H(0,1)=focal_length*(cos(rotation_roll)/(center2camera_length-x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch))); //duy dy12
-	H(0,2)=focal_length*
+	H(0,1)=focal_length_uy*(cos(rotation_roll)/(center2camera_length-x12_hat*cos(rotation_pitch)+z12_hat*sin(rotation_pitch))); //duy dy12
+	H(0,2)=focal_length_uy*
 	( 
 	((x12_hat-center2camera_length*cos(rotation_pitch))*sin(rotation_roll)+y12_hat*cos(rotation_roll)*sin(rotation_pitch))
 	/
@@ -208,13 +212,13 @@ void get_new_residual_and_H(void){
 
 	//H 2nd row (uz)
 	
-	H(1,0)= -focal_length*
+	H(1,0)= -focal_length_uz*
 	( 
 	(-y12_hat*cos(rotation_pitch)*sin(rotation_roll)+cos(rotation_roll)* ( z12_hat+center2camera_length*sin(rotation_pitch) ) )/
 	( pow(center2camera_length-(x12_hat*cos(rotation_pitch))+(z12_hat*sin(rotation_pitch)) ,2) 	)
 	); //duz dx12
-	H(1,1)=(focal_length*sin(rotation_roll))/ ( center2camera_length-( x12_hat*cos(rotation_pitch) )  +(z12_hat*sin(rotation_pitch)) ); 
-	H(1,2)=(focal_length* ( cos(rotation_roll)*(x12_hat-center2camera_length*cos(rotation_pitch))-y12_hat*sin(rotation_pitch)*sin(rotation_roll)    )  )/ 
+	H(1,1)=(focal_length_uz*sin(rotation_roll))/ ( center2camera_length-( x12_hat*cos(rotation_pitch) )  +(z12_hat*sin(rotation_pitch)) ); 
+	H(1,2)=(focal_length_uz* ( cos(rotation_roll)*(x12_hat-center2camera_length*cos(rotation_pitch))-y12_hat*sin(rotation_pitch)*sin(rotation_roll)    )  )/ 
 	( pow(center2camera_length-(x12_hat*cos(rotation_pitch))+(z12_hat*sin(rotation_pitch)) ,2) );
 
 	
@@ -292,8 +296,8 @@ int main(int argc, char** argv)
 			}
 		
 		ROS_INFO("State; Tag %f %f %f  ",x(0),x(1),x(2));
-		ROS_INFO("State; vel1 %f %f %f  ",x(3),x(4),x(5));
-		ROS_INFO("State; vel2 %f %f %f  ",x(6),x(7),x(8));
+		//ROS_INFO("State; vel1 %f %f %f  ",x(3),x(4),x(5));
+		//ROS_INFO("State; vel2 %f %f %f  ",x(6),x(7),x(8));
 		
 		state_pub.publish(x_msg); //publish message
 		

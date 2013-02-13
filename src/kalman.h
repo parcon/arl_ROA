@@ -62,8 +62,8 @@ Q=I;
 
 //R
 R=Eigen::Matrix<float, dimention_m, dimention_m>::Identity();
-R(0,0)=100;
-R(1,1)=100;
+R(0,0)=1000;
+R(1,1)=1000;
 R(2,2)=.1;
 
 //P_old
