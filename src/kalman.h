@@ -2,7 +2,7 @@
 
 
 const int ROS_RATE = 40;
-float ROS_HZ = 1/ROS_RATE;
+float ROS_HZ = 1.0/ROS_RATE;
 //part one
 const int dimention_n = 9; //length of state vector
 const int dimention_m= 6; //length of observation vector
@@ -122,11 +122,11 @@ A<< 0,0,0, 1,0,0, -1,0,0,  //first line
 	0,0,0, 0,0,0, 0,0,0; //9 line
 
 A=(ROS_HZ*A+I); //discritize 
-std::cout << "A" << std::endl;
-std::cout << A << std::endl;
 
 
-//B1
+
+
+//B
 B<< 0,0,0, //1
 	0,0,0, //2
 	0,0,0, //3

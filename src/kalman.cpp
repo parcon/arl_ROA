@@ -214,6 +214,13 @@ if (kalman_with_tag)
 		O=H*P_minus*H.transpose()+R;
 		K=P_minus*H.transpose()*O.inverse();
 		
+		std::ostringstream OUT11;
+		OUT11 << B;
+		ROS_INFO("Kalman_w_tag B: %s",OUT11.str().c_str());
+		
+		std::ostringstream OUT10;
+		OUT10 << A;
+		ROS_INFO("Kalman_w_tag A: %s",OUT10.str().c_str());
 		
 		std::ostringstream OUT;
 		OUT << K;

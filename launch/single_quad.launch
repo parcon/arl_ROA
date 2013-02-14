@@ -1,0 +1,8 @@
+<launch>
+<include file="$(find arl_ROA)/launch/multibot.launch" >
+  <!-- all vars that included.launch requires must be set -->
+  <arg name="QUAD_NAME" value="quad1" />
+ <!-- <arg name="QUAD_IP" value="192.168.1.10" />  -->
+  <arg name="FIRST_QUAD" value="TRUE" />
+</include>
+</launch>
