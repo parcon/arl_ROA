@@ -158,7 +158,6 @@ void get_new_residual_and_H_wo_tag(void){
 }
 
 
-
 int main(int argc, char** argv)
 {
 	//ROS stuff
@@ -216,29 +215,29 @@ if (kalman_with_tag)
 		K=P_minus*H.transpose()*O.inverse();
 		
 		
-		OUT.flush();
+		std::ostringstream OUT;
 		OUT << K;
 		ROS_INFO("Kalman_w_tag K: %s",OUT.str().c_str());
 
-		OUT.flush();
-		OUT << P_minus;
-		ROS_INFO("Kalman_w_tag P_minus: %s",OUT.str().c_str());
+		std::ostringstream OUT1;
+		OUT1 << P_minus;
+		ROS_INFO("Kalman_w_tag P_minus: %s",OUT1.str().c_str());
 
-		OUT.flush();
-		OUT << H;
-		ROS_INFO("Kalman_w_tag H: %s",OUT.str().c_str());
+		std::ostringstream OUT2;
+		OUT2 << H;
+		ROS_INFO("Kalman_w_tag H: %s",OUT2.str().c_str());
 
-		OUT.flush();
-		OUT << H.transpose();
-		ROS_INFO("Kalman_w_tag H_trans: %s",OUT.str().c_str());
+		std::ostringstream OUT3;
+		OUT3 << H.transpose();
+		ROS_INFO("Kalman_w_tag H_trans: %s",OUT3.str().c_str());
 
-		OUT.flush();
-		OUT << O;
-		ROS_INFO("Kalman_w_tag O: %s",OUT.str().c_str());
+		std::ostringstream OUT4;
+		OUT4 << O;
+		ROS_INFO("Kalman_w_tag O: %s",OUT4.str().c_str());
 
-		OUT.flush();
-		OUT << O.transpose();
-		ROS_INFO("Kalman_w_tag O_trans: %s",OUT.str().c_str());
+		std::ostringstream OUT5;
+		OUT5 << O.transpose();
+		ROS_INFO("Kalman_w_tag O_trans: %s",OUT5.str().c_str());
 		
 		
 		//std::cout << "K" << std::endl;
