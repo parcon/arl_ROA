@@ -5,7 +5,8 @@ const int ROS_RATE = 40;
 float ROS_HZ = 1/ROS_RATE;
 //part one
 const int dimention_n = 9; //length of state vector
-const int dimention_m= 6; //length of observation vetor
+const int dimention_m= 6; //length of observation vector
+const int dimention_m_small= 3; //length of observation vector
 const int dimention_l= 3; //size of control vector
 
 
@@ -20,9 +21,15 @@ typedef Eigen::Matrix<float, dimention_n, dimention_m> obs_to_state;
 typedef Eigen::Matrix<float, dimention_n, dimention_n> error_cov;
 typedef Eigen::Matrix<float, dimention_m, dimention_m> measurement_error_cov;
 
+typedef Eigen::Matrix<float,dimention_m_small,1> obs_vector_small;
+typedef Eigen::Matrix<float, dimention_m_small, dimention_n> state_to_obs_small;
+typedef Eigen::Matrix<float,dimention_m_small, dimention_m_small> measurement_error_cov_small;
+typedef Eigen::Matrix<float, dimention_n, dimention_m_small> obs_to_state_small;
+
 error_cov I;
 obs_to_state K;
 state_to_obs H;
+
 state_to_obs H_trans;
 control_model B;
 dynamics_model A;
@@ -33,6 +40,13 @@ error_cov P_old;
 error_cov P_minus;
 measurement_error_cov R;
 measurement_error_cov O;
+
+measurement_error_cov_small R_wo_tag;
+measurement_error_cov_small O_wo_tag;
+state_to_obs_small H_wo_tag;
+obs_to_state_small K_wo_tag;
+obs_vector_small y_wo_tag;
+obs_vector_small z_wo_tag;
 
 obs_vector n;
 obs_vector z;
@@ -59,12 +73,27 @@ I<<Eigen::Matrix<float, dimention_n, dimention_n>::Identity();
 
 //Q
 Q=I;
+Q(0,0)=.001;
+Q(1,1)=.001;
+Q(2,2)=.001;
+
+Q(3,3)=.25;
+Q(4,4)=.25;
+Q(5,5)=.25;
+
+//q for vel2 should be large
+//qfor vel1 some noise
+//q for pos1 is small
 
 //R
 R=Eigen::Matrix<float, dimention_m, dimention_m>::Identity();
-R(0,0)=1000;
-R(1,1)=1000;
+R=R*.1;
+R(0,0)=.25;
+R(1,1)=.25;
 R(2,2)=.1;
+
+R_wo_tag=Eigen::Matrix<float, dimention_m_small, dimention_m_small>::Identity();
+R_wo_tag=.1*R_wo_tag;
 
 //P_old
 P_old=I;
@@ -88,9 +117,9 @@ A<< 0,0,0, 1,0,0, -1,0,0,  //first line
 	0,0,0, 0,-k1,0,   0,0,0, //5 line
 	0,0,0, 0,0,-k2,   0,0,0, //6 line
 
-	0,0,0, 0,0,0, -k1,0,0,   //7 line
-	0,0,0, 0,0,0, 0,-k1,0,   //8 line
-	0,0,0, 0,0,0, 0,0,-k2; //9 line
+	0,0,0, 0,0,0, 0,0,0,   //7 line
+	0,0,0, 0,0,0, 0,0,0,   //8 line
+	0,0,0, 0,0,0, 0,0,0; //9 line
 
 A=(ROS_HZ*A+I); //discritize 
 std::cout << "A" << std::endl;
@@ -115,14 +144,23 @@ std::cout << std::endl;
 std::cout << "B" << std::endl;
 std::cout << B << std::endl;
 
+
 //H
-H<< 0,0,0, 0,0,0,   0,0,0,  
-	0,0,0, 0,0,0,   0,0,0,  
-	0,0,0, 0,0,0,   0,0,0,  
+
+H<< 1,0,0, 0,0,0,   0,0,0,  
+	0,1,0, 0,0,0,   0,0,0,  
+	0,0,1, 0,0,0,   0,0,0,  
 
 	0,0,0, 1,0,0,   0,0,0,  
 	0,0,0, 0,1,0,   0,0,0,   
 	0,0,0, 0,0,1,   0,0,0;
+
+
+//old H from kalman_old
+
+H_wo_tag<<  0,0,0, 1,0,0,  0,0,0,
+			0,0,0, 0,1,0,  0,0,0,
+			0,0,0, 0,0,1,  0,0,0;
 
 std::cout << std::endl;
 std::cout << "H" << std::endl;
