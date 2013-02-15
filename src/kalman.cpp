@@ -87,6 +87,9 @@ void state_callback(const ardrone_autonomy::Navdata& msg_in)
 	vel_x=msg_in.vx*0.001; //  mm/s to m/s
 	vel_y=msg_in.vy*0.001; //  mm/s to m/s
 	vel_z=msg_in.vz*0.001; //  mm/s to m/s
+	
+//	ROS_INFO("KALIN vx: %4f vy: %4f, %4f",vel_x,vel_y,vel_z);
+
 }
 
 void cmd_callback(const geometry_msgs::Vector3& cmd_in)

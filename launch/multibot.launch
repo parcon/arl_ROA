@@ -52,7 +52,17 @@
 	<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js1" respawn="true"/>
 	</group>
 	
-	<node pkg="rxtools" type="rxplot" name="Battery_Monitor" args="ardrone/navdata/batteryPercent" />
+	<!--<node pkg="rxtools" type="rxplot" name="Battery_Monitor" args="ardrone/navdata/batteryPercent" />
+	<node pkg="rxtools" type="rxplot" name="Debug_Monitor_in_x" args="state_post_KF[3] state_post_KF[6]"/> -->
+<!--	
+	<node pkg="rxtools" type="rxplot" output="screen" name="rxplot" args="-t 'Debug Information' 
+	-l VaX,Vbx,Vay,Vby
+	-b 100 /state_post_KF/data[3],/state_post_KF/data[6] /state_post_KF/data[4],/state_post_KF/data[7]" respawn="true" />
+	-->
+	<node pkg="rxtools" type="rxplot" output="screen" name="rxplot2" args="-t 'Debug Information 2' 
+	-l joy_velx,cmd_vel_x,joy_vely,cmd_vel_y,Batt
+	-b 100 /joy_vel/x,/cmd_vel/linear/x /joy_vel/y,/cmd_vel/linear/y /ardrone/navdata/batteryPercent" respawn="true" />
+	
 	<!-- <node pkg="rxtools" type="rxplot" name="Tag_monitor" args="$(arg FIRST_QUAD)/state_post_KF/0" /> -->
 	
 	<node pkg="image_view" type="image_view" respawn="false" name="Front_Camera_Viewer" output="screen">

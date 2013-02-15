@@ -19,7 +19,7 @@ using namespace RVO;
 void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
 {
     const float timeStep = 0.02;    // Simulation time step
-    const float timeHorizon = 1.0f;    // Time horizon for collision checker
+    const float timeHorizon = 2.0f;    // Time horizon for collision checker
     const float invTimeHorizon = 1.0f / timeHorizon;       // Inverse of time horizon
     
     // Relative position
@@ -251,21 +251,33 @@ int main(int argc, char **argv)
 	posB=posB_in;
 	AgoalVel=AgoalVel_in;
  
- 	ROS_INFO("pBx: %f, pBy: %f, pBz: %f, vBx: %f, vBy: %, vBz: %f", posB[0], posB[1], posB[2], velB[0], velB[1], velB[2]);
+ 	ROS_INFO("vBx: %f, vBy: %f, vBz: %f", velB[0], velB[1], velB[2]);
+ 	ROS_INFO("vBAx: %f, vBAy: %f, vBAz: %f", velB[0]+velA[0], velB[1]+velA[1], velB[2]+velA[2]);
         // run ORCA for A->B
         runORCA(empty_vec,posB, velA, velB+velA, AgoalVel, maxVel, newVel); // made velB act as a relative, added velA to get a global PARCON
 	//ROS_INFO("neWVel x: %f, goal x: %f, newVel y: %f, goal y: %f, newVel z: %f, goal z: %f", newVel[0], AgoalVel[0], newVel[1], AgoalVel[1], newVel[2], AgoalVel[2]);
-		geometry_msgs::Vector3 cmd_vel_temp;
-		cmd_vel_temp.x=newVel[0];
-		cmd_vel_temp.y=newVel[1];
-//		cmd_vel_temp.z=newVel[2];
-		cmd_vel_temp.z=AgoalVel[2];
+	
+	geometry_msgs::Vector3 cmd_vel_temp;
+	cmd_vel_temp.x=newVel[0];
+	cmd_vel_temp.y=newVel[1];
+//	cmd_vel_temp.z=newVel[2];
+	cmd_vel_temp.z=AgoalVel[2];
 
-		cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
- 
-        cmd_vel_u_msg.x = newVel[0];
-        cmd_vel_u_msg.y = newVel[1];
-        cmd_vel_u_msg.z = newVel[2];
+	
+	cmd_vel_twist.linear.x=cmd_vel_temp.x; 
+	cmd_vel_twist.linear.y=cmd_vel_temp.y; 
+	cmd_vel_twist.linear.z=cmd_vel_temp.z;
+	cmd_vel_twist.angular.x=1.0; 
+	cmd_vel_twist.angular.y=1.0;
+	cmd_vel_twist.angular.z=0.0;
+	
+	
+	//cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
+
+        cmd_vel_u_msg.x = cmd_vel_temp.x;
+        cmd_vel_u_msg.y = cmd_vel_temp.y;
+        cmd_vel_u_msg.z = cmd_vel_temp.z;
+        
         pub_velA.publish(cmd_vel_u_msg);
         pub_twist.publish(cmd_vel_twist);
 
