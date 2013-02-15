@@ -119,7 +119,7 @@ Vector3 velB_in;
 Vector3 AgoalVel_in;
 int had_message =0;
 int had_message2 =0;
-float maxVel = 0.5;      // max possible velocity of agent
+float maxVel = 1.0;      // max possible velocity of agent
 double Kp= 1.0;
 double Kd= 0.5;
 double des_altd= 1.0;
