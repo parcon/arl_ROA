@@ -71,7 +71,7 @@ void init_matrix(void){
 //I
 I<<Eigen::Matrix<float, dimention_n, dimention_n>::Identity();
 
-//Q
+//Q: process noise
 Q=I;
 Q(0,0)=.001;
 Q(1,1)=.001;
@@ -81,19 +81,31 @@ Q(3,3)=.25;
 Q(4,4)=.25;
 Q(5,5)=.25;
 
+Q(6,6)=1.0;
+Q(7,7)=1.0;
+Q(8,8)=1.0;
+
 //q for vel2 should be large
 //qfor vel1 some noise
 //q for pos1 is small
 
-//R
+//R: observation noise
 R=Eigen::Matrix<float, dimention_m, dimention_m>::Identity();
-R=R*.1;
-R(0,0)=.25;
-R(1,1)=.25;
-R(2,2)=.1;
+//R=R*.1;
+R(0,0)=.5;
+R(1,1)=.5;
+R(2,2)=.5;
+
+R(3,3)=.25;
+R(4,4)=.25;
+R(5,5)=.25;
+
+//R(6,6)=2.0;
+//R(7,7)=2.0;
+//R(8,8)=2.0;
 
 R_wo_tag=Eigen::Matrix<float, dimention_m_small, dimention_m_small>::Identity();
-R_wo_tag=.1*R_wo_tag;
+R_wo_tag=.25*R_wo_tag;
 
 //P_old
 P_old=I;

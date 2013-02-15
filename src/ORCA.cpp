@@ -19,7 +19,7 @@ using namespace RVO;
 void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
 {
     const float timeStep = 0.02;    // Simulation time step
-    const float timeHorizon = .001;    // Time horizon for collision checker
+    const float timeHorizon = 1.0f;    // Time horizon for collision checker
     const float invTimeHorizon = 1.0f / timeHorizon;       // Inverse of time horizon
     
     // Relative position
@@ -32,8 +32,8 @@ void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, c
     const float distSq = absSq(pos_rel);                
 
     // Combined radius of the two quads (m)
-    //const float combinedRadius = 1.2;                   
-    const float combinedRadius = 2.0;
+    const float combinedRadius = 1.2;                   
+    //const float combinedRadius = 2.0;
 
     // Square of combined radius of quads.
     const float combinedRadiusSq = sqr(combinedRadius); 
@@ -50,29 +50,29 @@ void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, c
     // if the robots will not collide:
     if (distSq > combinedRadiusSq)                      
     {
-	    const Vector3 w = vel_rel - invTimeHorizon * pos_rel;
+	const Vector3 w = vel_rel - invTimeHorizon * pos_rel;
         const float wLengthSq = absSq(w);
-		const float dotProduct1 = w * pos_rel;
-		if (dotProduct1 < 0.0f && sqr(dotProduct1) > combinedRadiusSq * wLengthSq) 
+	const float dotProduct1 = w * pos_rel;
+	if (dotProduct1 < 0.0f && sqr(dotProduct1) > combinedRadiusSq * wLengthSq) 
         {
-			const float wLength = std::sqrt(wLengthSq);
-			const Vector3 unitW = w / wLength;
-			plane.normal = unitW;
-			u = (combinedRadius * invTimeHorizon - wLength) * unitW;
-		}
-		else 
-        {
-			const float A = distSq;
-			const float B = pos_rel * vel_rel;
-			const float C = absSq(vel_rel) - absSq(cross(pos_rel, vel_rel)) / (distSq - combinedRadiusSq);
-			const float t = (B + std::sqrt(sqr(B) - A * C)) / A;
-			const Vector3 w = vel_rel - t * pos_rel;
-			const float wLength = abs(w);
-			const Vector3 unitW = w / wLength;
-			plane.normal = unitW;
-			u = (combinedRadius * t - wLength) * unitW;
-		}
+		const float wLength = std::sqrt(wLengthSq);
+		const Vector3 unitW = w / wLength;
+		plane.normal = unitW;
+		u = (combinedRadius * invTimeHorizon - wLength) * unitW;
 	}
+	else 
+        {
+		const float A = distSq;
+		const float B = pos_rel * vel_rel;
+		const float C = absSq(vel_rel) - absSq(cross(pos_rel, vel_rel)) / (distSq - combinedRadiusSq);
+		const float t = (B + std::sqrt(sqr(B) - A * C)) / A;
+		const Vector3 w = vel_rel - t * pos_rel;
+		const float wLength = abs(w);
+		const Vector3 unitW = w / wLength;
+		plane.normal = unitW;
+		u = (combinedRadius * t - wLength) * unitW;
+	}
+    }
     // if the robots will collide:
 	else 
     {
@@ -246,17 +246,20 @@ int main(int argc, char **argv)
         //      Update next posiiton as PB_k+1 = PB_k + VB_k*delta_T   
             
         velA=velA_in;
-        velB=velB_in;
-		posB=posB_in;
-		AgoalVel=AgoalVel_in;
+        velB=-velB_in; // made negative to put in world frame not second quad PARCON
+        
+	posB=posB_in;
+	AgoalVel=AgoalVel_in;
  
+ 	ROS_INFO("pBx: %f, pBy: %f, pBz: %f, vBx: %f, vBy: %, vBz: %f", posB[0], posB[1], posB[2], velB[0], velB[1], velB[2]);
         // run ORCA for A->B
-        runORCA(empty_vec,posB, velA, velB, AgoalVel, maxVel, newVel);
-
+        runORCA(empty_vec,posB, velA, velB+velA, AgoalVel, maxVel, newVel); // made velB act as a relative, added velA to get a global PARCON
+	//ROS_INFO("neWVel x: %f, goal x: %f, newVel y: %f, goal y: %f, newVel z: %f, goal z: %f", newVel[0], AgoalVel[0], newVel[1], AgoalVel[1], newVel[2], AgoalVel[2]);
 		geometry_msgs::Vector3 cmd_vel_temp;
 		cmd_vel_temp.x=newVel[0];
 		cmd_vel_temp.y=newVel[1];
-		cmd_vel_temp.z=newVel[2];
+//		cmd_vel_temp.z=newVel[2];
+		cmd_vel_temp.z=AgoalVel[2];
 
 		cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
  
