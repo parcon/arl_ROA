@@ -175,7 +175,7 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	drone_vx_=msg_in.vx*0.001; //[mm/s] to [m/s]
 	drone_vy_=msg_in.vy*0.001;	
 	drone_vz_=msg_in.vz*0.001;
-	drone_altd_=msg_in.altd*0.001;
+	drone_altd_=msg_in.altd*0.01;
 	
 	drone_ax_=msg_in.ax*9.8; //[g] to [m/s2]
 	drone_ay_=msg_in.ay*9.8;	
@@ -263,16 +263,18 @@ int main(int argc, char **argv)
 //	cmd_vel_temp.z=newVel[2];
 	cmd_vel_temp.z=AgoalVel[2];
 
-	
+	/*
 	cmd_vel_twist.linear.x=cmd_vel_temp.x; 
 	cmd_vel_twist.linear.y=cmd_vel_temp.y; 
 	cmd_vel_twist.linear.z=cmd_vel_temp.z;
 	cmd_vel_twist.angular.x=1.0; 
 	cmd_vel_twist.angular.y=1.0;
 	cmd_vel_twist.angular.z=0.0;
+	*/
 	
-	
-	//cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
+	cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
+
+	//cmd_vel_twist=cmd_vel_temp.z;
 
         cmd_vel_u_msg.x = cmd_vel_temp.x;
         cmd_vel_u_msg.y = cmd_vel_temp.y;
