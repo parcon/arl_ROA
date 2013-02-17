@@ -305,6 +305,11 @@ void joy_callback(const geometry_msgs::Vector3& joy_in)
 	AgoalVel_in[1]=joy_in.y;
 	AgoalVel_in[2]=joy_in.z;
 
+    // Adding r_des for the LQR controller
+    joy_vx_ = joy_in.x;
+    joy_vy_ = joy_in.y;
+    joy_vz_ = joy_in.z;
+
 	had_message2=1;
 }
 

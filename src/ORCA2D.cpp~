@@ -7,16 +7,25 @@
 #include <geometry_msgs/Twist.h>
 #include <ardrone_autonomy/Navdata.h>
 
-#include "Vector3.h" //     arl_RVO2_3D/Vector3.h
+//#include "Vector3.h" //     arl_RVO2_3D/Vector3.h
+#include "Vector2.h"
 #include "Agent.cpp"
 #include <cstddef>
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <Eigen/Dense>
 
 using namespace RVO;
 
+void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
+{
+    const float timeHorizon = 2.0f;
+    const float invTimeHorizon = 1.0f / timeHorizon;
+
+    const Obstacle *obstacle1; // ?? const Obstacle *obstacle1 = obstacleNeighbors.second;
+    const Obstacle *obstacle2; // ?? const Obstacle *obstacle2 = obstacle1->nextObstacles_;
+
+/*
 void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
 {
     const float timeStep = 0.02;    // Simulation time step
@@ -91,6 +100,8 @@ void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, c
 		linearProgram4(orcaPlanes, planeFail, max_vel, new_vel);
 	}
 }
+*/
+
 /* 
 void altd_controller(double vx_des,double vy_des,double altd_des,double Kp, double Kd,double max_speed)
 {
@@ -125,13 +136,10 @@ double Kp= 1.0;
 double Kd= 0.5;
 double des_altd= 1.0;
 
-double drone_rx_, drone_ry_, drone_rz_;  // Tilt angle of drone, DAMAN.
 double drone_vx_, drone_vy_ , drone_vz_;
 double drone_ax_, drone_ay_ , drone_az_, drone_altd_;
 double drone_vx, drone_vy , drone_vz;
 double drone_ax, drone_ay , drone_az, drone_altd;
-
-double joy_vx_, joy_vy_, joy_vz_;
 
 double map(double value, double in_min, double in_max, double out_min, double out_max) {
   return (double)((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
@@ -152,108 +160,6 @@ geometry_msgs::Twist twist_controller(geometry_msgs::Vector3 v_des,double K)
 		twist_msg_gen.linear.y= map(twist_msg_gen.linear.y, -maxVel, maxVel, -1.0, 1.0);
 		twist_msg_gen.linear.z= map(twist_msg_gen.linear.z, -maxVel, maxVel, -1.0, 1.0);
 		return twist_msg_gen;
-}
-
-void LQR_matrices(const Eigen::Matrix<float, 6,6>& Q, const Eigen::Matrix<float, 3,3>& R, Eigen::Matrix<float,3,6>& L, Eigen::Matrix<float,3,3>& E, int& LQR_flag)
-{ 
-    float Kt = 5;
-    float Cd = 0.25;
-    float mg = 1; // !!!!!!!!!!!!!!!!!!!!!!!!!!!----------------What is mg???--------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111
-    Eigen::MatrixXf A(6,6);
-    Eigen::MatrixXf B(6,3);
-
-    A << -Kt,   0,   0,   0,   0,   0,
-           0, -Kt,   0,   0,   0,   0,
-           0,   0, -Kt,   0,   0,   0,
-          mg,   0,   0, -Cd,   0,   0,
-           0,  mg,   0,   0, -Cd,   0,
-           0,   0,  mg,   0,   0, -Cd;
-
-    B << Kt,  0,  0,
-          0, Kt,  0,
-          0,  0, Kt,
-          0,  0,  0,
-          0,  0,  0,
-          0,  0,  0;
-
-        
-    Eigen::MatrixXf S(6,6);
-    Eigen::MatrixXf T(6,3);
-    Eigen::MatrixXf V(3,6);
-    Eigen::MatrixXf Vt(6,3) = V.transpose();
-    Eigen::MatrixXf At(6,6) = A.transpose();
-    Eigen::MatrixXf Bt(3,6) = B.transpose();
-
-    // Initialize S and T
-    S = Vt*Q*V;
-    T = Vt*Q;
-
-    // Find convergence values for S and T
-    for(int i = 0; i<200; i++)
-    {
-        S = Vt*Q*V + At*S*A - At*S*B*(R+Bt*S*B).inverse()*Bt*S*A;
-        T = Vt*Q + At*T - At*S*B*(R+Bt*S*B).inverse()*Bt*T;
-    }
-
-    L = (R+Bt*S*B).inverse()*Bt*S*A;
-    E = (R+Bt*S*B).inverse()*Bt*T;
-
-    // Reset flag so function won't run again.
-    LQR_flag = 1;    
-}
-
-geometry_msgs::Twist LQR_controller(geometry_msgs::Vector3::vel_des)
-{
-    // Initialize LQR Flag so LQR matrices are only computed once 
-    int LQR_flag = 0;
-   
-    // Setup cost matrices
-    Eigen::MatrixXf Q(6,6);
-    Eigen::MatrixXf R(3,3);
-    Q <<  10,   0,   0,   0,   0,   0,
-           0,  10,   0,   0,   0,   0,
-           0,   0,  10,   0,   0,   0,
-           0,   0,   0, 100,   0,   0,
-           0,   0,   0,   0, 100,   0,
-           0,   0,   0,   0,   0, 100;
-
-    R << 25,  0,  0,
-          0, 25,  0,
-          0,  0, 25;
-
-    // Computer matrices for r_d = -Lx+Ev_d
-    Eigen::MatrixXf L(3,6);
-    Eigen::MatrixXf E(3,3);
-    if (LQR_flag == 0)
-    {
-        LQR_matrices(Q,R, L, E, LQR_flag); // Sets L, E, and flag (they are sent in as pointers)
-    }
-
-    // Set state x
-    Eigen::Vector6f x;
-    Eigen::Vector3f vel_des;
-
-    x[0] = drone_rx_; x[1] = drone_ry_; x[2] = drone_rz_;
-    x[3] = drone_vx_; x[4] = drone_vy_; x[5] = drone_vz_;
-    
-    // Compute r_des
-    r_des = -L*x + E*vel_des;
-
-    // Set r_des for output
-    geometry_msgs::Twist twist_msg_gen;
-
-    twist_msg_gen.linear.x = r_des[0];
-    twist_msg_gen.linear.y = r_des[1];
-    twist_msg_gen.linear.z = r_des[2];
-    twist_msg_gen.angular.x = 1.0;
-    twist_msg_gen.angular.y = 1.0;
-    twist_msg_gen.angular.z = 0.0;
-
-    twist_msg_gen.linear.x= map(twist_msg_gen.linear.x, -maxVel, maxVel, -1.0, 1.0);  //{-1 to 1}=K*( m/s - m/s)
-	twist_msg_gen.linear.y= map(twist_msg_gen.linear.y, -maxVel, maxVel, -1.0, 1.0);
-	twist_msg_gen.linear.z= map(twist_msg_gen.linear.z, -maxVel, maxVel, -1.0, 1.0);
-	
-    return twist_msg_gen;  
 }
 
 void kalman_callback(const std_msgs::Float32MultiArray& state_in)
@@ -287,13 +193,6 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	drone_ay_=msg_in.ay*9.8;	
 	drone_az_=msg_in.az*9.8;
 		
-    /*
-    // !!!!!!!!!!!!!!!!!!!!!!!!! ------------------------------------------- NEED TILT VALUES ------------------------ !!!!!!!!!!!!!!!!!!!!!!
-    drone_rx_ = ??
-    drone_ry_ = ??
-    drone_rz_ = ??
-    */
-
 	//drone_state=msg_in.state;	
 	//ROS_INFO("getting sensor reading");	
 }
@@ -304,7 +203,6 @@ void joy_callback(const geometry_msgs::Vector3& joy_in)
 	AgoalVel_in[0]=joy_in.x;
 	AgoalVel_in[1]=joy_in.y;
 	AgoalVel_in[2]=joy_in.z;
-
 	had_message2=1;
 }
 
