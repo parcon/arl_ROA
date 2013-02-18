@@ -7,9 +7,9 @@
 #include <geometry_msgs/Twist.h>
 #include <ardrone_autonomy/Navdata.h>
 
-//#include "Vector3.h" //     arl_RVO2_3D/Vector3.h
-#include "Vector2.h"
+#include "Vector3.h" //     arl_RVO2_3D/Vector3.h
 #include "Agent.cpp"
+#include <Eigen/dense>
 #include <cstddef>
 #include <vector>
 #include <iostream>
@@ -19,111 +19,101 @@ using namespace RVO;
 
 void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
 {
-    const float timeHorizon = 2.0f;
-    const float invTimeHorizon = 1.0f / timeHorizon;
-
-    const Obstacle *obstacle1; // ?? const Obstacle *obstacle1 = obstacleNeighbors.second;
-    const Obstacle *obstacle2; // ?? const Obstacle *obstacle2 = obstacle1->nextObstacles_;
-
-    const Vector2 relativePosition1 = 
-/*
-void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
-{
+    const int num_agents = 5;    
     const float timeStep = 0.02;    // Simulation time step
     const float timeHorizon = 2.0f;    // Time horizon for collision checker
     const float invTimeHorizon = 1.0f / timeHorizon;       // Inverse of time horizon
     
-    // Relative position
-    Vector3 pos_rel = pos_b - pos_a;
-
-    // Relative velocity of two quads
-    Vector3 vel_rel = vel_a-vel_b;
-    
-    // Distance between the two quads
-    const float distSq = absSq(pos_rel);                
-
     // Combined radius of the two quads (m)
     const float combinedRadius = 1.2;                   
-    //const float combinedRadius = 2.0;
 
     // Square of combined radius of quads.
     const float combinedRadiusSq = sqr(combinedRadius); 
-        
+
+    Vector3 offset = (0,0,1);
+
+    // Relative positions
+    std::vector<Vector3> pos_rel;
+    pos_rel.push_back(pos_b - pos_a + offset*0.5*combinedRadius);  // Dummy quad 1
+    pos_rel.push_back(pos_b - pos_a + offset*combinedRadius);      // Dummy quad 2
+    pos_rel.push_back(pos_b - pos_a);                              // Real quad
+    pos_rel.push_back(pos_b - pos_a - offset*0.5*combineDRadius);  // Dummy quad 3
+    pos_rel.push_back(pos_b - pos_a - offset*combinedRadius);      // Dummy quad 4
+
+    // Relative velocity of two quads
+    std::vector<Vector3> vel_rel;
+    vel_rel.push_back(vel_a-vel_b);
+    vel_rel.push_back(vel_a-vel_b);
+    vel_rel.push_back(vel_a-vel_b);
+    vel_rel.push_back(vel_a-vel_b);
+    vel_rel.push_back(vel_a-vel_b);
+    
     // Variable to save half-plane from ORCA
-    Plane plane;                                        
+    Plane plane; 
 
     // Vector of half-planes for finding safe velocity for more than 2 agents
-    std::vector<Plane> orcaPlanes;                      
+    std::vector<Plane> orcaPlanes;
 
     // Unit vector of half-plane
-    Vector3 u;                                          
-    
-    // if the robots will not collide:
-    if (distSq > combinedRadiusSq)                      
-    {
-	const Vector3 w = vel_rel - invTimeHorizon * pos_rel;
-        const float wLengthSq = absSq(w);
-	const float dotProduct1 = w * pos_rel;
-	if (dotProduct1 < 0.0f && sqr(dotProduct1) > combinedRadiusSq * wLengthSq) 
-        {
-		const float wLength = std::sqrt(wLengthSq);
-		const Vector3 unitW = w / wLength;
-		plane.normal = unitW;
-		u = (combinedRadius * invTimeHorizon - wLength) * unitW;
-	}
-	else 
-        {
-		const float A = distSq;
-		const float B = pos_rel * vel_rel;
-		const float C = absSq(vel_rel) - absSq(cross(pos_rel, vel_rel)) / (distSq - combinedRadiusSq);
-		const float t = (B + std::sqrt(sqr(B) - A * C)) / A;
-		const Vector3 w = vel_rel - t * pos_rel;
-		const float wLength = abs(w);
-		const Vector3 unitW = w / wLength;
-		plane.normal = unitW;
-		u = (combinedRadius * t - wLength) * unitW;
-	}
-    }
-    // if the robots will collide:
-	else 
-    {
-		const float invTimeStep = 1.0f / timeStep;
-		const Vector3 w = vel_rel - invTimeStep * pos_rel;
-		const float wLength = abs(w);
-		const Vector3 unitW = w / wLength;
-		plane.normal = unitW;
-		u = (combinedRadius * invTimeStep - wLength) * unitW;
-	}
-    plane.point = vel_a + 0.5f * u;
-	orcaPlanes.push_back(plane);
-    const size_t planeFail = linearProgram3(orcaPlanes, max_vel, cmd_vel, false, new_vel);
-	if (planeFail < orcaPlanes.size()) {
-		linearProgram4(orcaPlanes, planeFail, max_vel, new_vel);
-	}
-}
-*/
+    Vector3 u;  
 
-/* 
-void altd_controller(double vx_des,double vy_des,double altd_des,double Kp, double Kd,double max_speed)
-{
-		geometry_msgs::Twist twist_msg_gen;
-	
-		cmd_x=Kp*(vx_des-drone_vx); //-Kd *drone_vx_	; //{-1 to 1}=K*( m/s - m/s)
-		cmd_y=Kp*(vy_des-drone_vy); 
-		//cmd_z=Kp*(vz_des-drone_vz);
-		cmd_z=Kp*(altd_des-drone_altd);
-		twist_msg_gen.angular.x=1.0; 
-		twist_msg_gen.angular.y=1.0;
-		twist_msg_gen.angular.z=0.0;
-		
-		if (cmd_z > max_speed)
-			{cmd_z=1.0;}
-		if (cmd_z < 0.0)
-			{cmd_z=0.0;}
-		std::vector result(cmd_z
-		return 
-}	
-*/
+    // Distance between the two quads
+    std::vector<float> distSq;
+    distSq.push_back(absSq(pos_rel[0]));
+    distSq.push_back(absSq(pos_rel[1]));
+    distSq.push_back(absSq(pos_rel[2]));
+    distSq.push_back(absSq(pos_rel[3]));
+    distSq.push_back(absSq(pos_rel[4]));
+
+    for(int i = 0; i < num_agents; i++)
+    {
+        // if the robots will not collide:
+        if (distSq[i] > combinedRadiusSq)                      
+        {
+	        const Vector3 w = vel_rel[i] - invTimeHorizon * pos_rel[i];
+            const float wLengthSq = absSq(w);
+	        const float dotProduct1 = w * pos_rel[i];
+	        if (dotProduct1 < 0.0f && sqr(dotProduct1) > combinedRadiusSq * wLengthSq) 
+            {
+		        const float wLength = std::sqrt(wLengthSq);
+		        const Vector3 unitW = w / wLength;
+		        plane.normal = unitW;
+		        u = (combinedRadius * invTimeHorizon - wLength) * unitW;
+	        }
+	        else 
+            {
+		        const float A = distSq[i];
+		        const float B = pos_rel[i] * vel_rel[i];
+		        const float C = absSq(vel_rel[i]) - absSq(cross(pos_rel[i], vel_rel[i])) / (distSq[i] - combinedRadiusSq);
+		        const float t = (B + std::sqrt(sqr(B) - A * C)) / A;
+		        const Vector3 w = vel_rel[i] - t * pos_rel[i];
+    		    const float wLength = abs(w);
+    		    const Vector3 unitW = w / wLength;
+    		    plane.normal = unitW;
+    		    u = (combinedRadius * t - wLength) * unitW;
+    	    }
+        }
+        // if the robots will collide:
+	    else 
+        {
+		    const float invTimeStep = 1.0f / timeStep;
+		    const Vector3 w = vel_rel[i] - invTimeStep * pos_rel[i];
+		    const float wLength = abs(w);
+		    const Vector3 unitW = w / wLength;
+		    plane.normal = unitW;
+		    u = (combinedRadius * invTimeStep - wLength) * unitW;
+	    }
+        plane.point = vel_a[i] + 0.5f * u;
+	    orcaPlanes.push_back(plane);
+    }
+
+    const size_t planeFail = linearProgram3(orcaPlanes, max_vel, cmd_vel, false, new_vel);
+	if (planeFail < orcaPlanes.size())
+    {
+        linearProgram4(orcaPlanes, planeFail, max_vel, new_vel);
+    }
+
+}
 
 //Globals for callback
 Vector3 posB_in;
@@ -141,26 +131,134 @@ double drone_vx_, drone_vy_ , drone_vz_;
 double drone_ax_, drone_ay_ , drone_az_, drone_altd_;
 double drone_vx, drone_vy , drone_vz;
 double drone_ax, drone_ay , drone_az, drone_altd;
+double drone_rx_, drone_ry_;  // Tilt angle of drone, DAMAN.
 
-double map(double value, double in_min, double in_max, double out_min, double out_max) {
-  return (double)((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
+// Initialize LQR Flag so LQR matrices are only computed once 
+int LQR_flag = 0;
+
+double map(double value, double in_min, double in_max, double out_min, double out_max) 
+{
+    return (double)((value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
 }
 
 geometry_msgs::Twist twist_controller(geometry_msgs::Vector3 v_des,double K)
 {
-		geometry_msgs::Twist twist_msg_gen;
-				
-		twist_msg_gen.linear.x=K*(v_des.x-drone_vx_); 
-		twist_msg_gen.linear.y=K*(v_des.y-drone_vy_); 
-		twist_msg_gen.linear.z=K*(v_des.z-drone_vz_);
-		twist_msg_gen.angular.x=1.0; 
-		twist_msg_gen.angular.y=1.0;
-		twist_msg_gen.angular.z=0.0;
+    geometry_msgs::Twist twist_msg_gen;
+		
+    twist_msg_gen.linear.x=K*(v_des.x-drone_vx_); 
+    twist_msg_gen.linear.y=K*(v_des.y-drone_vy_); 
+    twist_msg_gen.linear.z=K*(v_des.z-drone_vz_);
+    twist_msg_gen.angular.x=1.0; 
+    twist_msg_gen.angular.y=1.0;
+    twist_msg_gen.angular.z=0.0;
+
+    twist_msg_gen.linear.x= map(twist_msg_gen.linear.x, -maxVel, maxVel, -1.0, 1.0);  //{-1 to 1}=K*( m/s - m/s)
+    twist_msg_gen.linear.y= map(twist_msg_gen.linear.y, -maxVel, maxVel, -1.0, 1.0);
+    twist_msg_gen.linear.z= map(twist_msg_gen.linear.z, -maxVel, maxVel, -1.0, 1.0);
+    return twist_msg_gen;
+}
+
+void LQR_matrices(const Eigen::Matrix<float,4,4>& Q, const Eigen::Matrix<float,2,2>& R, Eigen::Matrix<float,2,4>& L, Eigen::Matrix<float,2,2>& E, int& LQR_flag)
+{
+    float Kt = 5;
+    float Cd = 0.25;
+    float mg = 1; // !!!!!!!!!!!!!!!!!!!!!!!!!!!----------------What is mg???--------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111
+
+    Eigen::MatrixXf A(4,4);
+    Eigen::MatrixXf B(4,2);
+
+    A << -Kt,   0,   0,   0,
+           0, -Kt,   0,   0,
+           0,  mg, -Cd,   0,
+          mg,   0,   0, -Cd;
+
+    B << Kt,  0,
+          0, Kt,
+          0,  0, 
+          0,  0;
+
+    Eigen::MatrixXf S(4,4);
+    Eigen::MatrixXf T(4,2);
+    Eigen::MatrixXf V(2,4);
+    
+    V << 0, 0,
+         0, 0,
+         1, 0,
+         0, 1;
+
+    Eigen::MatrixXf Vt(4,2) = V.transpose();
+    Eigen::MatrixXf At(4,4) = A.transpose();
+    Eigen::MatrixXf Bt(2,4) = B.transpose();
+
+    // Initialize S and T
+    S = Vt*Q*V;
+    T = Vt*Q;
+
+    // Find convergence values for S and T
+    for(int i = 0; i<200; i++)
+    {
+        S = Vt*Q*V + At*S*A - At*S*B*(R+Bt*S*B).inverse()*Bt*S*A;
+        T = Vt*Q + At*T - At*S*B*(R+Bt*S*B).inverse()*Bt*T;
+    }
+
+    L = (R+Bt*S*B).inverse()*Bt*S*A;
+    E = (R+Bt*S*B).inverse()*Bt*T;
+
+    // Reset flag so function won't run again.
+    LQR_flag = 1;           
+    
+}
+
+geometry_msgs::Twist LQR_controller(geometry_msgs::Vector3 vel_des)
+{
+    // Setup cost matrices
+    Eigen::MatrixXf Q(4,4);
+    Eigen::MatrixXf R(2,2);
+    
+    Q << 10, 0,   0,   0,
+          0, 10,  0,   0,
+          0, 0,   100, 0,
+          0, 0,   0,   100;
+
+    R << 25, 0,
+          0, 25;
+
+    // Computer matrices for r_d = -Lx+Ev_d
+    Eigen::MatrixXf L(2,4);
+    Eigen::MatrixXf E(2,2);
+    if (LQR_flag == 0)
+    {
+        LQR_matrices(Q,R, L, E, LQR_flag); // Sets L, E, and flag (they are sent in as pointers)
+    }
+
+    // Set state x
+    Eigen::Vector4f x;
+    Eigen::Vector2f rd;
+    Eigven::Vector2f vd;
+
+    vd[0] = vel_des.x;
+    vd[1] = vel_des.y;
+
+    x[0] = drone_rx_; x[1] = drone_ry_;
+    x[2] = drone_vx_; x[3] = drone_vy_;
+
+    rd = -L*x + E*vd;
+
+    // Set r_des for output
+    geometry_msgs::Twist twist_msg_gen;
+
+    twist_msg_gen.linear.x = rd[0];
+    twist_msg_gen.linear.y = rd[1];
+    twist_msg_gen.linear.z = AgoalVel_in[2];
+    twist_msg_gen.angular.x = 1.0;
+    twist_msg_gen.angular.y = 1.0;
+    twist_msg_gen.angular.z = 0.0;
+
+    twist_msg_gen.linear.x= map(twist_msg_gen.linear.x, -maxVel, maxVel, -1.0, 1.0);  //{-1 to 1}=K*( m/s - m/s)
+	twist_msg_gen.linear.y= map(twist_msg_gen.linear.y, -maxVel, maxVel, -1.0, 1.0);
+	twist_msg_gen.linear.z= map(twist_msg_gen.linear.z, -maxVel, maxVel, -1.0, 1.0);
 	
-		twist_msg_gen.linear.x= map(twist_msg_gen.linear.x, -maxVel, maxVel, -1.0, 1.0);  //{-1 to 1}=K*( m/s - m/s)
-		twist_msg_gen.linear.y= map(twist_msg_gen.linear.y, -maxVel, maxVel, -1.0, 1.0);
-		twist_msg_gen.linear.z= map(twist_msg_gen.linear.z, -maxVel, maxVel, -1.0, 1.0);
-		return twist_msg_gen;
+    return twist_msg_gen; 
 }
 
 void kalman_callback(const std_msgs::Float32MultiArray& state_in)
@@ -194,13 +292,19 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	drone_ay_=msg_in.ay*9.8;	
 	drone_az_=msg_in.az*9.8;
 		
+    /*
+    // !!!!!!!!!! ----------------------------- NEED TILT VALUES ------------------------ !!!!!!!!!!!!!!!!!!!!!!
+    drone_rx_ = ?? Rotation about x-axis
+    drone_ry_ = ?? Rotation about y-axis
+    */
+
 	//drone_state=msg_in.state;	
 	//ROS_INFO("getting sensor reading");	
 }
 
 void joy_callback(const geometry_msgs::Vector3& joy_in)
 {
-	//Take in state post KF and put into vels and relative state for orca
+	// Take in joystick values
 	AgoalVel_in[0]=joy_in.x;
 	AgoalVel_in[1]=joy_in.y;
 	AgoalVel_in[2]=joy_in.z;
@@ -209,9 +313,9 @@ void joy_callback(const geometry_msgs::Vector3& joy_in)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc,argv,"ORCA_3D");  // Initialize ROS
+    ros::init(argc,argv,"ORCA_3D");     // Initialize ROS
     ros::NodeHandle n;                  // declare node handle
-    ros::Rate loop_rate(50);    // Set frequency of rosnode
+    ros::Rate loop_rate(50);            // Set frequency of rosnode
     ros::Publisher pub_posA, pub_posB;  // Setup position publishers
     ros::Publisher pub_velA, pub_velB;  // Setup velocity publishers
     ros::Subscriber sub_state; 
@@ -220,20 +324,19 @@ int main(int argc, char **argv)
    	ros::Publisher pub_twist; 
 
 	sub_nav = n.subscribe("ardrone/navdata", 1, nav_callback);
-    pub_velA = n.advertise<geometry_msgs::Vector3>("cmd_vel_u",1); // Set advertiser for velA
+    pub_velA = n.advertise<geometry_msgs::Vector3>("cmd_vel_u",1); 
     sub_state= n.subscribe("state_post_KF", 1, kalman_callback);
     sub_joy= n.subscribe("joy_vel", 1, joy_callback);
     pub_twist = n.advertise<geometry_msgs::Twist>("cmd_vel", 1); 
 
-   // geometry_msgs::Vector3 posA_msg, posB_msg; // Set position value for in sim
     geometry_msgs::Vector3 cmd_vel_u_msg;
-    //, velB_msg; // Set velocity value for in sim
  	geometry_msgs::Twist cmd_vel_twist;
+
     // State parameters
     Vector3 posB(0.0,0.0,0.0);   // Position of B rel to A, but since A is at (0,0,0) relAB = posB
     Vector3 velA(0.0,0.0,0.0);
     Vector3 velB(0.0,0.0,0.0);  // Velocity of A, Velocity of B
-    Vector3 newVel(0.0,0.0,0.0);                    // Velocity that will come out of ORCA
+    Vector3 newVel(0.0,0.0,0.0); // Velocity that will come out of ORCA
 	Vector3 AgoalVel(0.0,0.0,0.0);
 	Vector3 empty_vec(0.0,0.0,0.0);
 
@@ -247,47 +350,37 @@ int main(int argc, char **argv)
 
     while(ros::ok() && had_message && had_message2)
     {
-        // For quad A:
-        //      Pass desired velocity into ORCA
-        //      Get new goal velocity
-        // For quad B: 
-        //      Pass desired velocity into ORCA 
-        //      Get new goal velocity
-        //  For quad A:
-        //      Update next position as PA_k+1 = PA_k + VA_k*delta_T
-        //  For quad B:
-        //      Update next posiiton as PB_k+1 = PB_k + VB_k*delta_T   
-            
+           
         velA=velA_in;
         velB=-velB_in; // made negative to put in world frame not second quad PARCON
         
-	posB=posB_in;
-	AgoalVel=AgoalVel_in;
+	    posB=posB_in;
+	    AgoalVel=AgoalVel_in;
  
- 	ROS_INFO("vBx: %f, vBy: %f, vBz: %f", velB[0], velB[1], velB[2]);
- 	ROS_INFO("vBAx: %f, vBAy: %f, vBAz: %f", velB[0]+velA[0], velB[1]+velA[1], velB[2]+velA[2]);
-        // run ORCA for A->B
+ 	    //ROS_INFO("vBx: %f, vBy: %f, vBz: %f", velB[0], velB[1], velB[2]);
+ 	    //ROS_INFO("vBAx: %f, vBAy: %f, vBAz: %f", velB[0]+velA[0], velB[1]+velA[1], velB[2]+velA[2]);
         runORCA(empty_vec,posB, velA, velB+velA, AgoalVel, maxVel, newVel); // made velB act as a relative, added velA to get a global PARCON
-	//ROS_INFO("neWVel x: %f, goal x: %f, newVel y: %f, goal y: %f, newVel z: %f, goal z: %f", newVel[0], AgoalVel[0], newVel[1], AgoalVel[1], newVel[2], AgoalVel[2]);
 	
-	geometry_msgs::Vector3 cmd_vel_temp;
-	cmd_vel_temp.x=newVel[0];
-	cmd_vel_temp.y=newVel[1];
-//	cmd_vel_temp.z=newVel[2];
-	cmd_vel_temp.z=AgoalVel[2];
+    	geometry_msgs::Vector3 cmd_vel_temp;
+    	cmd_vel_temp.x=newVel[0];
+    	cmd_vel_temp.y=newVel[1];
+    	cmd_vel_temp.z=AgoalVel[2];
 
-	/*
-	cmd_vel_twist.linear.x=cmd_vel_temp.x; 
-	cmd_vel_twist.linear.y=cmd_vel_temp.y; 
-	cmd_vel_twist.linear.z=cmd_vel_temp.z;
-	cmd_vel_twist.angular.x=1.0; 
-	cmd_vel_twist.angular.y=1.0;
-	cmd_vel_twist.angular.z=0.0;
-	*/
+	    /*
+        // No Controller
+	    cmd_vel_twist.linear.x=cmd_vel_temp.x; 
+	    cmd_vel_twist.linear.y=cmd_vel_temp.y; 
+	    cmd_vel_twist.linear.z=cmd_vel_temp.z;
+	    cmd_vel_twist.angular.x=1.0; 
+	    cmd_vel_twist.angular.y=1.0;
+	    cmd_vel_twist.angular.z=0.0;
+	    */
 	
-	cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
+        // P controller	    
+        //cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
 
-	//cmd_vel_twist=cmd_vel_temp.z;
+        // LQR Controller
+        cmd_vel_twist = LQR_controller(cmd_vel_temp);
 
         cmd_vel_u_msg.x = cmd_vel_temp.x;
         cmd_vel_u_msg.y = cmd_vel_temp.y;
