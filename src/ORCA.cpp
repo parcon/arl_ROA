@@ -212,7 +212,6 @@ int main(int argc, char **argv)
     sub_joy= n.subscribe("joy_vel", 1, joy_callback);
     pub_twist = n.advertise<geometry_msgs::Twist>("cmd_vel", 1); 
 
-   // geometry_msgs::Vector3 posA_msg, posB_msg; // Set position value for in sim
     geometry_msgs::Vector3 cmd_vel_u_msg;
     //, velB_msg; // Set velocity value for in sim
  	geometry_msgs::Twist cmd_vel_twist;
@@ -272,7 +271,7 @@ int main(int argc, char **argv)
 	cmd_vel_twist.angular.z=0.0;
 	*/
 	
-	cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
+	//cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
 
 	//cmd_vel_twist=cmd_vel_temp.z;
 
