@@ -158,11 +158,11 @@ geometry_msgs::Twist twist_controller(geometry_msgs::Vector3 v_des,double K)
     return twist_msg_gen;
 }
 
-void LQR_matrices(const Eigen::Matrix<float,4,4>& Q, const Eigen::Matrix<float,2,2>& R, Eigen::Matrix<float,2,4>& L, Eigen::Matrix<float,2,2>& E, int& LQR_flag)
+void LQR_matrices(const Eigen::Matrix<float,2,2>& Q, const Eigen::Matrix<float,2,2>& R, Eigen::Matrix<float,2,4>& L, Eigen::Matrix<float,2,2>& E)
 {
     float Kt = 5;
     float Cd = 0.25;
-    float mg = 1; // !!!!!!!!!!!!!!!!!!!!!!!!!!!----------------What is mg???--------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111
+    float mg = 0.38*9.81;
 
     Eigen::MatrixXf A(4,4);
     Eigen::MatrixXf B(4,2);
@@ -181,10 +181,8 @@ void LQR_matrices(const Eigen::Matrix<float,4,4>& Q, const Eigen::Matrix<float,2
     Eigen::MatrixXf T(4,2);
     Eigen::MatrixXf V(2,4);
     
-    V << 0, 0,
-         0, 0,
-         1, 0,
-         0, 1;
+    V << 0, 0, 1, 0
+         0, 0, 0, 1;
 
     Eigen::MatrixXf Vt(4,2) = V.transpose();
     Eigen::MatrixXf At(4,4) = A.transpose();
@@ -212,23 +210,21 @@ void LQR_matrices(const Eigen::Matrix<float,4,4>& Q, const Eigen::Matrix<float,2
 geometry_msgs::Twist LQR_controller(geometry_msgs::Vector3 vel_des)
 {
     // Setup cost matrices
-    Eigen::MatrixXf Q(4,4);
+    Eigen::MatrixXf Q(2,2);
     Eigen::MatrixXf R(2,2);
     
-    Q << 10, 0,   0,   0,
-          0, 10,  0,   0,
-          0, 0,   100, 0,
-          0, 0,   0,   100;
-
-    R << 25, 0,
+    Q << 25, 0,
           0, 25;
+
+    R << 5, 0,
+         0, 5;
 
     // Computer matrices for r_d = -Lx+Ev_d
     Eigen::MatrixXf L(2,4);
     Eigen::MatrixXf E(2,2);
     if (LQR_flag == 0)
     {
-        LQR_matrices(Q,R, L, E, LQR_flag); // Sets L, E, and flag (they are sent in as pointers)
+        LQR_matrices(Q, R, L, E); // Sets L, E, and flag (they are sent in as pointers)
     }
 
     // Set state x
@@ -239,8 +235,10 @@ geometry_msgs::Twist LQR_controller(geometry_msgs::Vector3 vel_des)
     vd[0] = vel_des.x;
     vd[1] = vel_des.y;
 
-    x[0] = drone_rx_; x[1] = drone_ry_;
-    x[2] = drone_vx_; x[3] = drone_vy_;
+    x[0] = drone_rx_; // Rotation about x-axis
+    x[1] = drone_ry_; // Rotation about y-axis
+    x[2] = drone_vx_; // X velocity
+    x[3] = drone_vy_; // Y velocity
 
     rd = -L*x + E*vd;
 
@@ -292,11 +290,8 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	drone_ay_=msg_in.ay*9.8;	
 	drone_az_=msg_in.az*9.8;
 		
-    /*
-    // !!!!!!!!!! ----------------------------- NEED TILT VALUES ------------------------ !!!!!!!!!!!!!!!!!!!!!!
-    drone_rx_ = ?? Rotation about x-axis
-    drone_ry_ = ?? Rotation about y-axis
-    */
+    drone_rx_ = msg_in.phi*0.001*3.14159/180 // [milli-degree] to [degree] to [radians]
+    drone_ry_ = msg_in.theta*0.001*3.14159/180 // [milli-degree] to [degree] to [radians]
 
 	//drone_state=msg_in.state;	
 	//ROS_INFO("getting sensor reading");	
@@ -366,7 +361,7 @@ int main(int argc, char **argv)
     	cmd_vel_temp.y=newVel[1];
     	cmd_vel_temp.z=AgoalVel[2];
 
-	    /*
+	    
         // No Controller
 	    cmd_vel_twist.linear.x=cmd_vel_temp.x; 
 	    cmd_vel_twist.linear.y=cmd_vel_temp.y; 
@@ -374,13 +369,13 @@ int main(int argc, char **argv)
 	    cmd_vel_twist.angular.x=1.0; 
 	    cmd_vel_twist.angular.y=1.0;
 	    cmd_vel_twist.angular.z=0.0;
-	    */
+	    
 	
         // P controller	    
         //cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
 
         // LQR Controller
-        cmd_vel_twist = LQR_controller(cmd_vel_temp);
+        //cmd_vel_twist = LQR_controller(cmd_vel_temp);
 
         cmd_vel_u_msg.x = cmd_vel_temp.x;
         cmd_vel_u_msg.y = cmd_vel_temp.y;
