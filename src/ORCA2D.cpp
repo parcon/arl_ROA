@@ -9,7 +9,7 @@
 
 #include "Vector3.h" //     arl_RVO2_3D/Vector3.h
 #include "Agent.cpp"
-#include <Eigen/dense>
+#include <Eigen/Dense>
 #include <cstddef>
 #include <vector>
 #include <iostream>
@@ -133,8 +133,10 @@ double drone_vx, drone_vy , drone_vz;
 double drone_ax, drone_ay , drone_az, drone_altd;
 double drone_rx_, drone_ry_;  // Tilt angle of drone, DAMAN.
 
-// Initialize LQR Flag so LQR matrices are only computed once 
+// Initialize LQR Flag so LQR matrices are only computed once, global LQR matrices
 int LQR_flag = 0;
+Eigen::MatrixXf L(2,4);
+Eigen::MatrixXf E(2,2);
 
 double map(double value, double in_min, double in_max, double out_min, double out_max) 
 {
@@ -220,8 +222,6 @@ geometry_msgs::Twist LQR_controller(geometry_msgs::Vector3 vel_des)
          0, 5;
 
     // Computer matrices for r_d = -Lx+Ev_d
-    Eigen::MatrixXf L(2,4);
-    Eigen::MatrixXf E(2,2);
     if (LQR_flag == 0)
     {
         LQR_matrices(Q, R, L, E); // Sets L, E, and flag (they are sent in as pointers)
@@ -290,8 +290,8 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	drone_ay_=msg_in.ay*9.8;	
 	drone_az_=msg_in.az*9.8;
 		
-    drone_rx_ = msg_in.phi*0.001*3.14159/180 // [milli-degree] to [degree] to [radians]
-    drone_ry_ = msg_in.theta*0.001*3.14159/180 // [milli-degree] to [degree] to [radians]
+    drone_rx_ = msg_in.rotX*3.14159/180 // [milli-degree] to [degree] to [radians]
+    drone_ry_ = msg_in.rotY*3.14159/180 // [milli-degree] to [degree] to [radians]
 
 	//drone_state=msg_in.state;	
 	//ROS_INFO("getting sensor reading");	

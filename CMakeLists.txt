@@ -21,6 +21,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS})
 
 rosbuild_add_executable(kalman src/kalman.cpp)
