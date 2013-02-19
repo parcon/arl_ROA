@@ -2,18 +2,20 @@
 <arg name="QUAD_NAME" default="quad1" />
 <arg name="QUAD_IP" default="192.168.1.1" />
 <arg name="FIRST_QUAD" default="TRUE" />
+<arg name="ORCA_3D" default="TRUE" />
+<arg name="JOYstick" default="TRUE" />
 
 <node name="Drone_Drivers" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" respawn="true" clear_params="true" args="-ip $(arg QUAD_IP)"> 
 
-	    <param name="outdoor" value="0" />
+	<!--    <param name="outdoor" value="0" /> -->
 	    <param name="max_bitrate" value="4000" />
 	    <param name="bitrate" value="4000" />
 	    <param name="navdata_demo" value="FALSE" /> <!-- May need to be false for tag detection -->
 	   <!-- <param name="navdata_options" value="NAVDATA_OPTION_FULL_MASK" />  May need to be used for tag detection -->
-	    <param name="flight_without_shell" value="0" />
+	<!--    <param name="flight_without_shell" value="1" /> -->
 	    <param name="altitude_max" value="2500" />
         <param name="altitude_min" value="50" />
-        <param name="euler_angle_max" value="0.087" /> <!--limit angle to 5 degrees -->
+        <param name="euler_angle_max" value="0.136" /> <!--limit angle to 8 degrees -->
         <param name="control_vz_max" value="700" />
 	    <param name="control_yaw" value="1.75" />
 	    <param name="detect_type" value="CAD_TYPE_VISION" /> <!-- value 2 for front camera (enemy color), value 3 - no detection, and value 4 - vertical camera roundel detection values. CAD_TYPE_VISION is 2d horizontal tags (hopefully the colored ones on the drone) -->
@@ -22,7 +24,6 @@
 	  <!--  <param name="default_groundstripe_colors" value="ARDRONE_DETECTION_COLOR_ARRACE_FINISH_LINE" /> -->
 	   	<param name="detections_select_h" value="32" />
 	    <param name="detections_select_v" value="0" /><!-- Bottom Camera detection disabled, was detections_select_v_hsync 128 -->
-	    <param name="enemy_without_shell" value="0" />
 	    <param name="do_imu_caliberation" value="true" />
 	    <param name="tf_prefix" value="$(arg QUAD_NAME)" />
         <!-- Covariance Values (3x3 matrices reshaped to 1x9)-->
@@ -39,20 +40,41 @@
 -->
 
 	<node pkg="arl_ROA" type="kalman" name="Kalman_Filter" respawn="true"/> 
-	<node pkg="arl_ROA" type="ORCA_3D" name="ORCA_3D" respawn="true"/>
-	<node pkg="arl_ROA" type="drone_control" name="Drone_Controller" respawn="true"/> 
+	
+	<group if="$(arg ORCA_3D)">
+		<node pkg="arl_ROA" type="ORCA_3D" name="ORCA_3D" respawn="true"/> 
+	</group>
+	
+	<group unless="$(arg ORCA_3D)">
+		<node pkg="arl_ROA" type="ORCA_2D" name="ORCA_2D" respawn="true"/> 
+	</group>
+	
 	<node pkg="arl_ROA" type="track_tf" name="Tag_to_TF" respawn="true"/> 
 	<node pkg="arl_ROA" type="tag_tf" name="Kalman_Tag_TF" respawn="true"/> 
 	
-	<group if="$(arg FIRST_QUAD)">
-	<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js0" respawn="true"/>
+	<group if="$(arg JOYstick)">
+		<node pkg="arl_ROA" type="drone_control" name="Drone_Controller" respawn="true"/>
+		<group if="$(arg FIRST_QUAD)">
+			<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js0" respawn="true"/>
+		</group>
+	
+		<group unless="$(arg FIRST_QUAD)">
+			<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js1" respawn="true"/>
+		</group>
 	</group>
 	
-	<group unless="$(arg FIRST_QUAD)">
-	<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js1" respawn="true"/>
-	</group>
+	<group unless="$(arg JOYstick)">
+		<node pkg="arl_ROA" type="fwd_test_control" name="Drone_fwd_controller" respawn="true"/> 
+		
+		<group if="$(arg FIRST_QUAD)">
+			<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js0" respawn="true"/>
+		</group>
 	
-	<!--<node pkg="rxtools" type="rxplot" name="Battery_Monitor" args="ardrone/navdata/batteryPercent" />
+		<group unless="$(arg FIRST_QUAD)">
+			<node pkg="joy" type="joy_node" name="Xbox_Controller" args="/dev/input/js1" respawn="true"/>
+		</group>
+	</group>
+
 	<node pkg="rxtools" type="rxplot" name="Debug_Monitor_in_x" args="state_post_KF[3] state_post_KF[6]"/> -->
 <!--	
 	<node pkg="rxtools" type="rxplot" output="screen" name="rxplot" args="-t 'Debug Information' 

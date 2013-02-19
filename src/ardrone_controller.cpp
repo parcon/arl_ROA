@@ -12,8 +12,6 @@ This code takes in joy messages and allows contol of the drone and exports a vel
 #include <ardrone_autonomy/Navdata.h>
 	
 double max_speed = 1.0; //[m/s]
-double Kp= 1.0;
-double Kd= 0.5;
 double des_altd= 1.0;
 
 double joy_x_,joy_y_,joy_z_;
@@ -23,6 +21,7 @@ int joy_a,joy_b,joy_xbox;
 double cmd_x,cmd_y,cmd_z;
 //int new_msg=0;
 int drone_state =0; 
+float drone_batt =100.0;
 
 // state: {0 is failure, 2 is landed, 3 is flying, 4 is hovering, 6 taking off, 8 landing}
 float forget =0.99;
@@ -47,6 +46,7 @@ void joy_callback(const sensor_msgs::Joy& joy_msg_in)
 void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 {
 	drone_state=msg_in.state;	
+	drone_batt=msg_in.batteryPercent;
 }
 
 double map(double value, double in_min, double in_max, double out_min, double out_max) {
@@ -86,6 +86,12 @@ int main(int argc, char** argv)
     ROS_INFO("Starting AR-Drone Controller");
  	while (ros::ok()) {
 	merge_new_mgs();
+	
+	if (drone_batt < 30.0)
+	{
+	ROS_ERROR("BATTERY IS CRITICAL LOW");
+	}
+	
 		//	system(chmod a+rw /dev/input/js0);
 		//commands to change state of drone
 		if (joy_a){

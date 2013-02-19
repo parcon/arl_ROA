@@ -28,7 +28,11 @@ rosbuild_add_executable(kalman src/kalman.cpp)
 rosbuild_add_executable(tag_tf src/tf_pub.cpp)
 rosbuild_add_executable(track_tf src/tf_pub_tracker.cpp)
 rosbuild_add_executable(drone_control src/ardrone_controller.cpp)
-rosbuild_add_executable(ORCA_3D src/ORCA2.cpp)
+rosbuild_add_executable(fwd_test_control src/ardrone_controller_fwd_test.cpp)
+rosbuild_add_executable(ORCA_3D src/ORCA.cpp)
+rosbuild_add_executable(Fwd_test src/fwd_test.cpp)
+rosbuild_add_executable(ORCA_2D src/ORCA2D.cpp)
+
 include_directories(${PROJECT_SOURCE_DIR}/RVO2_3D/)	
 
 #old things:

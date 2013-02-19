@@ -4,5 +4,7 @@
   <arg name="QUAD_NAME" value="quad1" />
  <!-- <arg name="QUAD_IP" value="192.168.1.10" />  -->
   <arg name="FIRST_QUAD" value="TRUE" />
+  <arg name="JOYstick" value="TRUE" />
+  <arg name="ORCA_3D" value="FALSE" />
 </include>
 </launch>
