@@ -167,7 +167,7 @@ int main(int argc, char** argv)
 	ROS_INFO("Starting Kalman");
 	ros::init(argc, argv,"Kalman");
     ros::NodeHandle node;
-    ros::Rate loop_rate(ROS_RATE);
+    ros::Rate loop_rate(ROS_HZ);
 	ros::Subscriber nav_sub;
 	ros::Subscriber imu_sub;
 	ros::Subscriber tag_sub;

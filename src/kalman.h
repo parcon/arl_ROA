@@ -1,8 +1,8 @@
 //matrix work for kalman
 
 
-const int ROS_RATE = 40;
-float ROS_HZ = 1.0/ROS_RATE;
+const int ROS_HZ = 40;
+const float ROS_RATE = 1.0/ROS_HZ;
 //part one
 const int dimention_n = 9; //length of state vector
 const int dimention_m= 6; //length of observation vector
@@ -133,7 +133,7 @@ A<< 0,0,0, 1,0,0, -1,0,0,  //first line
 	0,0,0, 0,0,0, 0,0,0,   //8 line
 	0,0,0, 0,0,0, 0,0,0; //9 line
 
-A=(ROS_HZ*A+I); //discritize 
+A=(ROS_RATE*A+I); //discritize 
 
 
 
@@ -151,7 +151,7 @@ B<< 0,0,0, //1
 	0,0,0, //8
 	0,0,0; //9
 
-B=B*ROS_HZ;  //discritize
+B=B*ROS_RATE;  //discritize
 std::cout << std::endl;
 std::cout << "B" << std::endl;
 std::cout << B << std::endl;

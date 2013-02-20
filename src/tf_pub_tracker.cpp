@@ -71,7 +71,7 @@ void state_callback(const ardrone_autonomy::Navdata& msg_in)
 int main(int argc, char** argv){
   ros::init(argc, argv, "tag_tf_track");
   ros::NodeHandle node;
-  ros::Rate loop_rate(100);
+  ros::Rate loop_rate(50);
   tf::StampedTransform transRot;
   tf::Transform transform;
   tf::TransformBroadcaster br;
