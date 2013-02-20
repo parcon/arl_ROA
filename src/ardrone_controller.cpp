@@ -12,11 +12,12 @@ This code takes in joy messages and allows contol of the drone and exports a vel
 #include <ardrone_autonomy/Navdata.h>
 	
 double max_speed = 1.0; //[m/s]
+double max_speed_yaw= 1.0;
 double des_altd= 1.0;
 
-double joy_x_,joy_y_,joy_z_;
+double joy_x_,joy_y_,joy_z_,joy_yaw_;
+double joy_x,joy_y,joy_z,joy_yaw;
 int joy_a_,joy_b_,joy_xbox_;
-double joy_x,joy_y,joy_z;
 int joy_a,joy_b,joy_xbox;
 double cmd_x,cmd_y,cmd_z;
 //int new_msg=0;
@@ -30,6 +31,7 @@ float forget =0.99;
 //geometry_msgs::Twist twist_msg;
 std_msgs::Empty emp_msg;
 geometry_msgs::Vector3 v3_msg; //[x, y,z]
+geometry_msgs::Twist twist_msg;
 sensor_msgs::Joy joy_msg_in;
 	
 void joy_callback(const sensor_msgs::Joy& joy_msg_in)
@@ -37,7 +39,8 @@ void joy_callback(const sensor_msgs::Joy& joy_msg_in)
 	//Take in xbox controller
 	joy_x_=joy_msg_in.axes[1]; //left stick up-down
 	joy_y_=joy_msg_in.axes[0]; //left stick left-right
-	joy_z_=joy_msg_in.axes[4]; //left stick left-right
+	joy_z_=joy_msg_in.axes[4]; //right stick up-down
+	joy_yaw_=joy_msg_in.axes[3]; //right stick left-right ?????????
 	joy_a_=joy_msg_in.buttons[0]; //a button
 	joy_b_=joy_msg_in.buttons[1]; //b button
 	joy_xbox_=joy_msg_in.buttons[8]; //xbox button
@@ -57,6 +60,7 @@ void merge_new_mgs(void){
 		joy_x=joy_x_;
 		joy_y=joy_y_;
 		joy_z=joy_z_;
+		joy_yaw=joy_yaw_;
 		joy_a=joy_a_;
 		joy_b=joy_b_;
 		joy_xbox=joy_xbox_;
@@ -71,6 +75,7 @@ int main(int argc, char** argv)
 	ros::Publisher pub_empty_reset;
 	ros::Publisher pub_empty_land;
 	ros::Publisher pub_empty_takeoff;
+	ros::Publisher pub_twist;
 	ros::Publisher pub_v3;
 	ros::Subscriber joy_sub;
 	ros::Subscriber nav_sub;
@@ -78,6 +83,7 @@ int main(int argc, char** argv)
 	joy_sub = node.subscribe("joy", 1, joy_callback);
 	nav_sub = node.subscribe("ardrone/navdata", 1, nav_callback);
 
+	pub_twist=node.advertise<geometry_msgs::Twist>("joy_vel_twist", 1); 
     pub_v3 = node.advertise<geometry_msgs::Vector3>("joy_vel", 1); 
 	pub_empty_reset = node.advertise<std_msgs::Empty>("ardrone/reset", 1);
 	pub_empty_takeoff = node.advertise<std_msgs::Empty>("ardrone/takeoff", 1);
@@ -85,11 +91,11 @@ int main(int argc, char** argv)
 	
     ROS_INFO("Starting AR-Drone Controller");
  	while (ros::ok()) {
-	merge_new_mgs();
+		merge_new_mgs();
 	
 	if (drone_batt < 30.0)
 	{
-	ROS_ERROR("BATTERY IS CRITICAL LOW");
+		ROS_ERROR("BATTERY IS CRITICAL LOW");
 	}
 	
 		//	system(chmod a+rw /dev/input/js0);
@@ -123,23 +129,29 @@ int main(int argc, char** argv)
 				}
 			}//drone take off	
 		}
-		if (fabs(joy_x)<0.10) {joy_x =0;}
-		//else {joy_x=joy_x*forget+joy_x_old*(1-forget);} //smoothing via forget
-
+		
+		if (fabs(joy_x)<0.1) {joy_x =0;}
 		if (fabs(joy_y)<0.1) {joy_y =0;}
-		//else {joy_y=joy_y*forget+joy_y_old*(1-forget);}
-
 		if (fabs(joy_z)<0.1) {joy_z =0;}
-		//else {joy_z=joy_z*forget+joy_z_old*(1-forget);} 
-
+		if (fabs(joy_yaw)<0.1) {joy_yaw =0;}
+		
 		cmd_x= joy_x*max_speed;
 		cmd_y= joy_y*max_speed;
 		cmd_z= joy_z*max_speed;
-	
+		cmd_yaw=joy_yaw*max_speed_yaw;
+		
 		v3_msg.x=cmd_x;
 		v3_msg.y=cmd_y;
 		v3_msg.z=cmd_z;
 		pub_v3.publish(v3_msg);
+
+		twist_msg.linear.x=cmd_x;
+		twist_msg.linear.y=cmd_y;
+		twist_msg.linear.z=cmd_z;
+		twist_msg.angular.z=cmd_yaw;
+
+		pub_twist.publish(twist_msg);
+		
 
 		ros::spinOnce();
 		loop_rate.sleep();

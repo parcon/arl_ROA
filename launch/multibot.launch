@@ -13,8 +13,8 @@
 	    <param name="navdata_demo" value="FALSE" /> <!-- May need to be false for tag detection -->
 	   <!-- <param name="navdata_options" value="NAVDATA_OPTION_FULL_MASK" />  May need to be used for tag detection -->
 	    <param name="flight_without_shell" value="1" />
-	    <param name="altitude_max" value="2500" />
-        <param name="altitude_min" value="50" />
+	    <param name="altitude_max" value="5000" />
+        <param name="altitude_min" value="100" />
         <param name="euler_angle_max" value="0.136" /> <!--limit angle to 8 degrees -->
         <param name="control_vz_max" value="700" />
 	    <param name="control_yaw" value="1.75" />

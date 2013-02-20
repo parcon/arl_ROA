@@ -326,7 +326,7 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	//drone_state=msg_in.state;	
 	//ROS_INFO("getting sensor reading");	
 }
-
+/*
 void joy_callback(const geometry_msgs::Vector3& joy_in)
 {
 	// Take in joystick values
@@ -335,6 +335,17 @@ void joy_callback(const geometry_msgs::Vector3& joy_in)
 	AgoalVel_in[2]=joy_in.z;
 	had_message2=1;
 }
+*/
+void joy_twist_callback(const geometry_msgs::Twist& joy_twist_in)
+{
+	//Take in state post KF and put into vels and relative state for orca
+	AgoalVel_in[0]=joy_twist_in.linear.x;
+	AgoalVel_in[1]=joy_twist_in.linear.y;
+	AgoalVel_in[2]=joy_twist_in.linear.z;
+	cmd_yaw=joy_twist_in.angular.z;
+	had_message2=1;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -346,12 +357,14 @@ int main(int argc, char **argv)
     ros::Subscriber sub_state; 
     ros::Subscriber sub_joy;
     ros::Subscriber sub_nav;
+    ros::Subscriber sub_twist;
    	ros::Publisher pub_twist; 
 
 	sub_nav = n.subscribe("ardrone/navdata", 1, nav_callback);
     pub_velA = n.advertise<geometry_msgs::Vector3>("cmd_vel_u",1); 
     sub_state= n.subscribe("state_post_KF", 1, kalman_callback);
-    sub_joy= n.subscribe("joy_vel", 1, joy_callback);
+   // sub_joy= n.subscribe("joy_vel", 1, joy_callback);
+    sub_twist=n.subscribe("joy_vel_twist", 1, joy_twist_callback);
     pub_twist = n.advertise<geometry_msgs::Twist>("cmd_vel", 1); 
 
     geometry_msgs::Vector3 cmd_vel_u_msg;
@@ -402,7 +415,7 @@ int main(int argc, char **argv)
 	    cmd_vel_twist.linear.z=cmd_vel_temp.z;
 	    cmd_vel_twist.angular.x=1.0; 
 	    cmd_vel_twist.angular.y=1.0;
-	    cmd_vel_twist.angular.z=0.0;
+	    cmd_vel_twist.angular.z=cmd_yaw;
 	  
 	
         // P controller	    

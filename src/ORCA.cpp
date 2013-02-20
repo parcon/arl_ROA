@@ -123,7 +123,7 @@ float maxVel = 1.0;      // max possible velocity of agent
 double Kp= 1.0;
 double Kd= 0.5;
 double des_altd= 1.0;
-
+double cmd_yaw =0.0;
 double drone_vx_, drone_vy_ , drone_vz_;
 double drone_ax_, drone_ay_ , drone_az_, drone_altd_;
 double drone_vx, drone_vy , drone_vz;
@@ -184,13 +184,23 @@ void nav_callback(const ardrone_autonomy::Navdata& msg_in)
 	//drone_state=msg_in.state;	
 	//ROS_INFO("getting sensor reading");	
 }
-
+/*
 void joy_callback(const geometry_msgs::Vector3& joy_in)
 {
 	//Take in state post KF and put into vels and relative state for orca
 	AgoalVel_in[0]=joy_in.x;
 	AgoalVel_in[1]=joy_in.y;
 	AgoalVel_in[2]=joy_in.z;
+	had_message2=1;
+}
+*/
+void joy_twist_callback(const geometry_msgs::Twist& joy_twist_in)
+{
+	//Take in state post KF and put into vels and relative state for orca
+	AgoalVel_in[0]=joy_twist_in.linear.x;
+	AgoalVel_in[1]=joy_twist_in.linear.y;
+	AgoalVel_in[2]=joy_twist_in.linear.z;
+	cmd_yaw=joy_twist_in.angular.z;
 	had_message2=1;
 }
 
@@ -203,15 +213,17 @@ int main(int argc, char **argv)
     ros::Publisher pub_velA, pub_velB;  // Setup velocity publishers
     ros::Subscriber sub_state; 
     ros::Subscriber sub_joy;
+    ros::Subscriber sub_twist;
     ros::Subscriber sub_nav;
    	ros::Publisher pub_twist; 
 
 	sub_nav = n.subscribe("ardrone/navdata", 1, nav_callback);
     pub_velA = n.advertise<geometry_msgs::Vector3>("cmd_vel_u",1); // Set advertiser for velA
     sub_state= n.subscribe("state_post_KF", 1, kalman_callback);
-    sub_joy= n.subscribe("joy_vel", 1, joy_callback);
+   // sub_joy= n.subscribe("joy_vel", 1, joy_callback);
+    sub_twist=n.subscribe("joy_vel_twist", 1, joy_twist_callback);
     pub_twist = n.advertise<geometry_msgs::Twist>("cmd_vel", 1); 
-
+	
     geometry_msgs::Vector3 cmd_vel_u_msg;
     //, velB_msg; // Set velocity value for in sim
  	geometry_msgs::Twist cmd_vel_twist;
@@ -262,14 +274,14 @@ int main(int argc, char **argv)
 //	cmd_vel_temp.z=newVel[2];
 	cmd_vel_temp.z=AgoalVel[2];
 
-	/*
+
 	cmd_vel_twist.linear.x=cmd_vel_temp.x; 
 	cmd_vel_twist.linear.y=cmd_vel_temp.y; 
 	cmd_vel_twist.linear.z=cmd_vel_temp.z;
-	cmd_vel_twist.angular.x=1.0; 
-	cmd_vel_twist.angular.y=1.0;
-	cmd_vel_twist.angular.z=0.0;
-	*/
+	cmd_vel_twist.angular.x=0.0; 
+	cmd_vel_twist.angular.y=0.0;
+	cmd_vel_twist.angular.z=cmd_yaw;
+
 	
 	//cmd_vel_twist=twist_controller(cmd_vel_temp,Kp);
 
