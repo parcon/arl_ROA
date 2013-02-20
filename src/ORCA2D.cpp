@@ -413,8 +413,8 @@ int main(int argc, char **argv)
 	    cmd_vel_twist.linear.x=cmd_vel_temp.x; 
 	    cmd_vel_twist.linear.y=cmd_vel_temp.y; 
 	    cmd_vel_twist.linear.z=cmd_vel_temp.z;
-	    cmd_vel_twist.angular.x=1.0; 
-	    cmd_vel_twist.angular.y=1.0;
+	    cmd_vel_twist.angular.x=0.0; 
+	    cmd_vel_twist.angular.y=0.0;
 	    cmd_vel_twist.angular.z=cmd_yaw;
 	  
 	
