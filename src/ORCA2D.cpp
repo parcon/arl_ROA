@@ -125,7 +125,7 @@ int had_message2 =0;
 float maxVel = 1.0;      // max possible velocity of agent
 double Kp= 0.75;			// Kp = 2.0 at max angle of 5deg, 
 double des_altd= 1.0;
-
+double cmd_yaw =0.0;
 double drone_vx_, drone_vy_ , drone_vz_;
 double drone_ax_, drone_ay_ , drone_az_, drone_altd_;
 double drone_vx, drone_vy , drone_vz;

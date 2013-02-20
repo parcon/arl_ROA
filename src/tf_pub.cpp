@@ -25,5 +25,5 @@ while(1){
 		ros::spinOnce();
 		loop_rate.sleep();
 }
- // return 0;
+return 0;
 }

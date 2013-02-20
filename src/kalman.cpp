@@ -186,7 +186,7 @@ int main(int argc, char** argv)
 	init_matrix(); //Setup Matrices 
 
 	ROS_INFO("Starting Kalman loop");
-	saidMsg =false;
+	bool saidMsg =false;
 	while ( (had_message_1 ==0) )
 	{
 		if (!saidMsg){

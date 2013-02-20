@@ -6,7 +6,7 @@ This code takes in joy messages and allows contol of the drone and exports a vel
 */
 #include <ros/ros.h>
 #include <std_msgs/Empty.h>
-//#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Vector3.h>
 #include <ardrone_autonomy/Navdata.h>
@@ -19,7 +19,7 @@ double joy_x_,joy_y_,joy_z_,joy_yaw_;
 double joy_x,joy_y,joy_z,joy_yaw;
 int joy_a_,joy_b_,joy_xbox_;
 int joy_a,joy_b,joy_xbox;
-double cmd_x,cmd_y,cmd_z;
+double cmd_x,cmd_y,cmd_z, cmd_yaw;
 //int new_msg=0;
 int drone_state =0; 
 float drone_batt =100.0;
@@ -31,7 +31,7 @@ float forget =0.99;
 //geometry_msgs::Twist twist_msg;
 std_msgs::Empty emp_msg;
 geometry_msgs::Vector3 v3_msg; //[x, y,z]
-geometry_msgs::Twist twist_msg;
+
 sensor_msgs::Joy joy_msg_in;
 	
 void joy_callback(const sensor_msgs::Joy& joy_msg_in)
@@ -144,7 +144,8 @@ int main(int argc, char** argv)
 		v3_msg.y=cmd_y;
 		v3_msg.z=cmd_z;
 		pub_v3.publish(v3_msg);
-
+		
+		geometry_msgs::Twist twist_msg;
 		twist_msg.linear.x=cmd_x;
 		twist_msg.linear.y=cmd_y;
 		twist_msg.linear.z=cmd_z;
