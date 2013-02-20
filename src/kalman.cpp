@@ -183,14 +183,16 @@ int main(int argc, char** argv)
 	cmd_sub = node.subscribe("cmd_vel_u", 1, cmd_callback);
 	//imu_sub = node.subscribe("ardrone/imu", 1, Imu_callback);
 	
-
 	init_matrix(); //Setup Matrices 
 
-	ROS_INFO("Starting Kalman loop \n");
-	
+	ROS_INFO("Starting Kalman loop");
+	saidMsg =false;
 	while ( (had_message_1 ==0) )
 	{
-		ROS_INFO("Kalman waiting to loop");
+		if (!saidMsg){
+		ROS_INFO("Kalman waiting for message");
+		saidMsg=true;
+		}
 		ros::spinOnce();
 		loop_rate.sleep();
 }
@@ -216,7 +218,10 @@ if (kalman_with_tag)
 		//Correction Step
 		O=H*P_minus*H.transpose()+R;
 		K=P_minus*H.transpose()*O.inverse();
+		x=x_minus+K*y;
+		P=(I-K*H)*P_minus;
 		
+		/*
 		std::ostringstream OUT11;
 		OUT11 << B;
 		ROS_INFO("Kalman_w_tag B: %s",OUT11.str().c_str());
@@ -224,41 +229,7 @@ if (kalman_with_tag)
 		std::ostringstream OUT10;
 		OUT10 << A;
 		ROS_INFO("Kalman_w_tag A: %s",OUT10.str().c_str());
-		
-		std::ostringstream OUT;
-		OUT << K;
-		ROS_INFO("Kalman_w_tag K: %s",OUT.str().c_str());
-
-		std::ostringstream OUT1;
-		OUT1 << P_minus;
-		ROS_INFO("Kalman_w_tag P_minus: %s",OUT1.str().c_str());
-
-		std::ostringstream OUT2;
-		OUT2 << H;
-		ROS_INFO("Kalman_w_tag H: %s",OUT2.str().c_str());
-
-		std::ostringstream OUT3;
-		OUT3 << H.transpose();
-		ROS_INFO("Kalman_w_tag H_trans: %s",OUT3.str().c_str());
-
-		std::ostringstream OUT4;
-		OUT4 << O;
-		ROS_INFO("Kalman_w_tag O: %s",OUT4.str().c_str());
-
-		std::ostringstream OUT5;
-		OUT5 << O.transpose();
-		ROS_INFO("Kalman_w_tag O_trans: %s",OUT5.str().c_str());
-		
-		
-		//std::cout << "K" << std::endl;
-		//std::cout << K << std::endl;
-		//int k;
-		//std::cin>> k;
-		
-		x=x_minus+K*y;
-		P=(I-K*H)*P_minus;
-		
-		
+		*/
 		
 }
 else
