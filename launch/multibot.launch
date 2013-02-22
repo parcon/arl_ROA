@@ -10,8 +10,8 @@
 		<param name="do_imu_caliberation" value="true" />
 		<param name="tf_prefix" value="$(arg QUAD_NAME)" />
 		<param name="looprate" value="50" />
-		<param name="outdoor" value="1" />
-		<param name="flight_without_shell" value="1" />
+		<param name="outdoor" value="0" />
+		<param name="flight_without_shell" value="0" />
 		<param name="max_bitrate" value="4000" />
 		<param name="bitrate" value="4000" />
 		<param name="altitude_max" value="5000" />
@@ -20,39 +20,44 @@
 		<param name="control_vz_max" value="2000" /> <!-- was 700 -->
 		<param name="control_yaw" value="1.75" />
 		<param name="navdata_demo" value="FALSE" /> <!-- May need to be false for tag detection -->
-			<param name="enable_navdata_time" value="true" />
-			<param name="enable_navdata_raw_measures" value="true" />
-			<param name="enable_navdata_phys_measures" value="true" />
-			<param name="enable_navdata_gyros_offsets" value="true" />
-			<param name="enable_navdata_euler_angles" value="true" />
-			<param name="enable_navdata_references" value="true" />
-			<param name="enable_navdata_trims" value="true" />
-			<param name="enable_navdata_rc_references" value="true" />
+			<param name="enable_navdata_time" value="false" />
+			<param name="enable_navdata_raw_measures" value="FALSE" />
+			<param name="enable_navdata_phys_measures" value="FALSE" />
+			<param name="enable_navdata_gyros_offsets" value="false" />
+			<param name="enable_navdata_euler_angles" value="FALSE" />
+			<param name="enable_navdata_references" value="FALSE" />
+			<param name="enable_navdata_trims" value="FALSE" />
+			<param name="enable_navdata_rc_references" value="FALSE" />
 			<param name="enable_navdata_pwm" value="true" />
-			<param name="enable_navdata_altitude" value="true" />
+			<param name="enable_navdata_altitude" value="false" />
 			<param name="enable_navdata_vision_raw" value="true" />
-			<param name="enable_navdata_vision_of" value="true" />
-			<param name="enable_navdata_vision" value="true" />
-			<param name="enable_navdata_vision_perf" value="true" />
-			<param name="enable_navdata_trackers_send" value="true" />
+			<param name="enable_navdata_vision_of" value="false" />
+			<param name="enable_navdata_vision" value="false" />
+			<param name="enable_navdata_vision_perf" value="false" />
+			<param name="enable_navdata_trackers_send" value="false" />
 			<param name="enable_navdata_vision_detect" value="true" />
-			<param name="enable_navdata_watchdog" value="true" />
-			<param name="enable_navdata_adc_data_frame" value="true" />
-			<param name="enable_navdata_video_stream" value="true" />
+			<param name="enable_navdata_watchdog" value="false" />
+			<param name="enable_navdata_adc_data_frame" value="false" />
+			<param name="enable_navdata_video_stream" value="false" />
 			<param name="enable_navdata_games" value="false" />
-			<param name="enable_navdata_pressure_raw" value="true" />
-			<param name="enable_navdata_magneto" value="true" />
-			<param name="enable_navdata_wind_speed" value="true" />
-			<param name="enable_navdata_kalman_pressure" value="true" />
-			<param name="enable_navdata_hdvideo_stream" value="true" />
-			<param name="enable_navdata_wifi" value="true" />
-			<param name="enable_navdata_zimmu_3000" value="true" />
+			<param name="enable_navdata_pressure_raw" value="false" />
+			<param name="enable_navdata_magneto" value="false" />
+			<param name="enable_navdata_wind_speed" value="false" />
+			<param name="enable_navdata_kalman_pressure" value="false" />
+			<param name="enable_navdata_hdvideo_stream" value="false" />
+			<param name="enable_navdata_wifi" value="false" />
+			<param name="enable_navdata_zimmu_3000" value="false" />
 		<!-- <param name="navdata_options" value="NAVDATA_OPTION_FULL_MASK" />  May need to be used for tag detection -->
 		
-		<param name="detect_type" value="CAD_TYPE_VISION" /> <!-- value 2 for front camera (enemy color), value 3 - no detection, and value 4 - vertical camera roundel detection values. CAD_TYPE_VISION is 2d horizontal tags (hopefully the colored ones on the drone) -->
-		<param name="enemy_colors" value="2" /><!-- Detect green,yellow, blue shell (1,2,3) -->
+		<param name="detect_type" value="CAD_TYPE_VISION" /> <!-- value 2 for front camera (enemy color), value 3 - no detection, and value 4 - vertical camera roundel detection values. CAD_TYPE_VISION is 2d horizontal tags-->
+
+<!-- enemy_colors: Detect green,yellow, blue shell (1,2,3) -->
+		<param if="$(arg FIRST_QUAD)" name="enemy_colors" value="2" />
+
+		<param unless="$(arg FIRST_QUAD)" name="enemy_colors" value="3" />
+
 		<param name= "enemy_without_shell" value="0" /> <!-- Detect indoor/outdoor shells -->
-		<!--  <param name="default_groundstripe_colors" value="ARDRONE_DETECTION_COLOR_ARRACE_FINISH_LINE" /> -->
+
 		<param name="detections_select_h" value="32" />
 		<param name="detections_select_v" value="0" /><!-- Bottom Camera detection disabled, was detections_select_v_hsync 128 -->
 		
@@ -103,7 +108,7 @@
 	<node pkg="rxtools" type="rxplot" output="screen" name="rxplot" args="-t 'Debug Information' 
 	-l m1,m2,m3,m4,Batt
 	-b 100 /ardrone/navdata/motor1,/ardrone/navdata/motor2,/ardrone/navdata/motor3,/ardrone/navdata/motor4 /ardrone/navdata/batteryPercent" respawn="true" />
-	
+
 	<!--<node pkg="rxtools" type="rxplot" output="screen" name="rxplot2" args="-t 'Debug Information 2' 
 	-l joy_velx,cmd_vel_x,joy_vely,cmd_vel_y,Batt
 	-b 100 /joy_vel_twist/linear/x,/cmd_vel/linear/x /joy_vel_twist/linear/y,/cmd_vel/linear/y /ardrone/navdata/batteryPercent" respawn="true" />

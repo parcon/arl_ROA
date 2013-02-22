@@ -10,14 +10,14 @@
   <url>http://ros.org/wiki/arl_ROA</url>
 
   <depend package="roscpp"/>
-  <depend package="eigen"/>
+  <!-- depend package="Eigen"/> -->
   <depend package="std_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="tf"/>
   <depend package="geometry_msgs"/>
   <depend package="ardrone_autonomy"/>
  <!-- <depend package="imu_filter_madgwick"/>-->
-
+	
 </package>
 
 

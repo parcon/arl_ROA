@@ -1,3 +1,5 @@
+
+
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
@@ -94,8 +96,12 @@ while(1){
 		transform.setRotation( tf::Quaternion(0, 0, 0) );
 		br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "ardrone_base_link", "tracked_tag"));
 		
-		
-		btMatrix3x3 trans;
+		#if ROS_VERSION_MINIMUM(1,8,0)
+  tf::Matrix3x3 trans;      
+#else
+  btMatrix3x3 trans;
+#endif
+		//btMatrix3x3 trans;
 		trans.setRPY(rotation_roll,rotation_pitch,0.0);
 		tf::Vector3 rotatedTrans=trans*tf::Vector3(x, y, z);
 		transform.setOrigin( rotatedTrans );
