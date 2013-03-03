@@ -10,14 +10,14 @@
 		<param name="do_imu_caliberation" value="true" />
 		<param name="tf_prefix" value="$(arg QUAD_NAME)" />
 		<param name="looprate" value="50" />
-		<param name="outdoor" value="1" />
-		<param name="flight_without_shell" value="1" />
+		<param name="outdoor" value="0" />
+		<param name="flight_without_shell" value="0" />
 		<param name="max_bitrate" value="4000" />
 		<param name="bitrate" value="4000" />
-		<param name="altitude_max" value="5000" />
+		<param name="altitude_max" value="500000" />
 		<param name="altitude_min" value="500" />
 		<param name="euler_angle_max" value="0.136" /> <!--limit angle to 8 degrees -->
-		<param name="control_vz_max" value="2000" /> <!-- was 700 -->
+		<param name="control_vz_max" value="2000" /> <!-- was 2000 -->
 		<param name="control_yaw" value="1.75" />
 		<param name="navdata_demo" value="FALSE" /> <!-- May need to be false for tag detection -->
 			<param name="enable_navdata_time" value="true" />
@@ -50,7 +50,7 @@
 		<!-- <param name="navdata_options" value="NAVDATA_OPTION_FULL_MASK" />  May need to be used for tag detection -->
 		
 		<param name="detect_type" value="CAD_TYPE_VISION" /> <!-- value 2 for front camera (enemy color), value 3 - no detection, and value 4 - vertical camera roundel detection values. CAD_TYPE_VISION is 2d horizontal tags (hopefully the colored ones on the drone) -->
-		<param name="enemy_colors" value="2" /><!-- Detect green,yellow, blue shell (1,2,3) -->
+		<param name="enemy_colors" value="3" /><!-- Detect green,yellow, blue shell (1,2,3) -->
 		<param name= "enemy_without_shell" value="0" /> <!-- Detect indoor/outdoor shells -->
 		<!--  <param name="default_groundstripe_colors" value="ARDRONE_DETECTION_COLOR_ARRACE_FINISH_LINE" /> -->
 		<param name="detections_select_h" value="32" />
@@ -99,18 +99,34 @@
 	</group>
 
 	<node pkg="rxtools" type="rxplot" name="Debug_Monitor_in_x" args="state_post_KF[3] state_post_KF[6]"/> -->
-
+<!--
 	<node pkg="rxtools" type="rxplot" output="screen" name="rxplot" args="-t 'Debug Information' 
 	-l m1,m2,m3,m4,Batt
 	-b 100 /ardrone/navdata/motor1,/ardrone/navdata/motor2,/ardrone/navdata/motor3,/ardrone/navdata/motor4 /ardrone/navdata/batteryPercent" respawn="true" />
+-->
+	<node pkg="rxtools" type="rxplot" output="screen" name="rxplot2" args="-t 'Debug Information 2' 
+	-l joy_velx,cmd_vel_x,joy_vely,cmd_vel_y,joy_velz,cmd_vel_z,Batt
+	-b 100 /joy_vel_twist/linear/x,/cmd_vel/linear/x /joy_vel_twist/linear/y,/cmd_vel/linear/y /joy_vel_twist/linear/z,/cmd_vel/linear/z /ardrone/navdata/batteryPercent" respawn="true" />
 	
-	<!--<node pkg="rxtools" type="rxplot" output="screen" name="rxplot2" args="-t 'Debug Information 2' 
-	-l joy_velx,cmd_vel_x,joy_vely,cmd_vel_y,Batt
-	-b 100 /joy_vel_twist/linear/x,/cmd_vel/linear/x /joy_vel_twist/linear/y,/cmd_vel/linear/y /ardrone/navdata/batteryPercent" respawn="true" />
-	-->
 	<node pkg="image_view" type="image_view" respawn="false" name="Front_Camera_Viewer" output="screen">
             <param name="autosize" type="bool" value="TRUE" />
             <param name="window_name" type="str" value="'$(arg QUAD_NAME) Front Camera'" />
             <remap from="image" to="ardrone/front/image_raw" />
-</node>
+          </node>
+         <node pkg="ros_vrpn_client" name="quad2" type="ros_vrpn_client" args="_vrpn_server_ip:=visionsystem.cs.utah.edu" required="true" />
+         <node pkg="ros_vrpn_client" name="quad1" type="ros_vrpn_client" args="_vrpn_server_ip:=visionsystem.cs.utah.edu" required="true" />
+         
+    <node ns="mono" name="camera_node" pkg="uvc_camera" type="camera_node" output="screen" >
+    	<param name="device"  value="/dev/video0" />
+    	<param name="fps" value="30" />
+    	<param name="width" value="640" />
+    	<param name="height" value="480" />
+    </node>
+    
+    <node pkg="image_view" type="image_view" respawn="false" name="Lab_View" output="screen">
+            <param name="autosize" type="bool" value="TRUE" />
+            <param name="window_name" type="str" value="'$(arg QUAD_NAME) Front Camera'" />
+            <remap from="image" to="mono/image_raw" />
+          </node>
+
 </launch>

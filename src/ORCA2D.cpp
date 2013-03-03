@@ -19,13 +19,14 @@ using namespace RVO;
 
 void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, const Vector3& vel_b, const Vector3& cmd_vel, const float& max_vel, Vector3& new_vel)
 {
-    const int num_agents = 5;    
+    const int num_agents = 7;    
     const float timeStep = 0.02;    // Simulation time step
     const float timeHorizon = 3.0f;    // Time horizon for collision checker
     const float invTimeHorizon = 1.0f / timeHorizon;       // Inverse of time horizon
     
     // Combined radius of the two quads (m)
-    const float combinedRadius = 1.2;                   
+    //const float combinedRadius = 1.2;                   
+    const float combinedRadius = 2.0; // Increased to 2.0 to attempt and alleviate issues from noise and aerodynamic effects. Daman                   
 
     // Square of combined radius of quads.
     const float combinedRadiusSq = sqr(combinedRadius); 
@@ -34,19 +35,20 @@ void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, c
 
     // Relative positions
     std::vector<Vector3> pos_rel;
-    pos_rel.push_back(pos_b - pos_a + offset*0.5*combinedRadius);  // Dummy quad 1
-    pos_rel.push_back(pos_b - pos_a + offset*combinedRadius);      // Dummy quad 2
-    pos_rel.push_back(pos_b - pos_a);                              // Real quad
-    pos_rel.push_back(pos_b - pos_a - offset*0.5*combinedRadius);  // Dummy quad 3
-    pos_rel.push_back(pos_b - pos_a - offset*combinedRadius);      // Dummy quad 4
+    pos_rel.push_back(pos_b - pos_a + offset*0.25*combinedRadius);  	// Dummy quad 1
+    pos_rel.push_back(pos_b - pos_a + offset*0.5*combinedRadius);  	// Dummy quad 2
+    pos_rel.push_back(pos_b - pos_a + offset*combinedRadius);      	// Dummy quad 3
+    pos_rel.push_back(pos_b - pos_a);                              	// Real quad
+    pos_rel.push_back(pos_b - pos_a - offset*0.25*combinedRadius);  	// Dummy quad 3
+    pos_rel.push_back(pos_b - pos_a - offset*0.5*combinedRadius);      	// Dummy quad 4
+    pos_rel.push_back(pos_b - pos_a - offset*combinedRadius); 		// Dummy quad 5
 
     // Relative velocity of two quads
     std::vector<Vector3> vel_rel;
-    vel_rel.push_back(vel_a-vel_b);
-    vel_rel.push_back(vel_a-vel_b);
-    vel_rel.push_back(vel_a-vel_b);
-    vel_rel.push_back(vel_a-vel_b);
-    vel_rel.push_back(vel_a-vel_b);
+    for (int i=0; i < num_agents; i++)
+    {
+    	vel_rel.push_back(vel_a-vel_b);
+    }
     
     // Variable to save half-plane from ORCA
     Plane plane; 
@@ -59,11 +61,10 @@ void runORCA(const Vector3& pos_a, const Vector3& pos_b, const Vector3& vel_a, c
 
     // Distance between the two quads
     std::vector<float> distSq;
-    distSq.push_back(absSq(pos_rel[0]));
-    distSq.push_back(absSq(pos_rel[1]));
-    distSq.push_back(absSq(pos_rel[2]));
-    distSq.push_back(absSq(pos_rel[3]));
-    distSq.push_back(absSq(pos_rel[4]));
+    for (int i = 0; i < num_agents; i++)
+    {
+    	distSq.push_back(absSq(pos_rel[i]));
+    }
 
     for(int i = 0; i < num_agents; i++)
     {
@@ -412,9 +413,9 @@ int main(int argc, char **argv)
         // No Controller
 	    cmd_vel_twist.linear.x=cmd_vel_temp.x; 
 	    cmd_vel_twist.linear.y=cmd_vel_temp.y; 
-	    cmd_vel_twist.linear.z=cmd_vel_temp.z;
-	    cmd_vel_twist.angular.x=0.0; 
-	    cmd_vel_twist.angular.y=0.0;
+	    cmd_vel_twist.linear.z=AgoalVel_in[2];
+	    cmd_vel_twist.angular.x= 0.0; 
+	    cmd_vel_twist.angular.y= 0.0;
 	    cmd_vel_twist.angular.z=cmd_yaw;
 	  
 	
